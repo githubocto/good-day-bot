@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const { createEventAdapter } = require("@slack/events-api");
 const axios = require("axios");
+const { writeToFile } = require('./interactive')
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
 const apiUrl = "https://slack.com/api";
@@ -13,7 +14,7 @@ const app = express();
 
 app.use("/slack/events", slackEvents.requestListener());
 
-app.use(express.json());
+app.use(express.urlencoded({ extended: true }))
 
 const server = app.listen(process.env.PORT, () => {
   console.log(
@@ -147,4 +148,36 @@ slackEvents.on("app_home_opened", async (event) => {
 
 app.get("/", async (req, res) => {
   res.send("beep boop");
+});
+
+app.post("/interactive", async (req, res) => {
+  // console.log(req.body)
+
+  const payload = JSON.parse(req.body.payload);
+  console.log(payload)
+    
+  writeToFile(req)
+  // if (Array.isArray(body.payload)) {
+  //   throw new Error(
+  //     `malformed payload`
+  //   )
+  // }
+
+  // const payload = JSON.parse(body.payload)
+  // console.log(payload)
+  // const isSubmitButton = isButtonSubmit(payload)
+
+  /*
+  if (!isSubmitButton) {
+    res.sendStatus(200)
+    return
+  }
+  */
+
+  // context.log(req.body)
+  // context.log(JSON.stringify(payload))
+
+  
+  
+  res.sendStatus(200)
 });
