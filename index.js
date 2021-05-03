@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const { createEventAdapter } = require("@slack/events-api");
 const axios = require("axios");
-const { writeToFile } = require('./interactive')
+const { writeToFile } = require('./github')
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
 const apiUrl = "https://slack.com/api";
