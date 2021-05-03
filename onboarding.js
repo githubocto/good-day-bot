@@ -47,7 +47,7 @@ const saveUser = async (config) => {
   await pool.query(updateUserSql);
 };
 
-const getHomeBlocks = ({ repo }) => {
+const getHomeBlocks = ({ repo } = {}) => {
   return [
     {
       type: "section",

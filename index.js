@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const { createEventAdapter } = require("@slack/events-api");
 
-const { writeToFile } = require("./interactive");
+const { writeToFile } = require("./github");
 const { getHomeBlocks, saveUser } = require("./onboarding");
 const { slaxios } = require("./api");
 
@@ -16,11 +16,7 @@ const app = express();
 
 app.use("/slack/events", slackEvents.requestListener());
 
-if (process.env.NODE_ENV === "development") {
-  app.use(express.json());
-} else {
-  app.use(express.urlencoded({ extended: true }));
-}
+app.use(express.urlencoded({ extended: true }));
 
 const port = process.env.NODE_ENV === "development" ? 3000 : process.env.PORT;
 
