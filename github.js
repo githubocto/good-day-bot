@@ -56,7 +56,7 @@ const writeToFile = async function (owner, repo, path, payload) {
     try {
         file = await getContent(owner, repo, path)
     } catch (err) {
-        return { body: err.message, status: 422 }
+        return { body: err.message, status: err.status }
     }
 
     let parsedPayload
@@ -77,7 +77,9 @@ const writeToFile = async function (owner, repo, path, payload) {
             content: Buffer.from(file.content + "\n" + parsedPayload).toString("base64"),
             sha: file.sha,
             }
-    const { data } = await octokit.repos.createOrUpdateFileContents({
+
+    try {
+      const { data } = await octokit.repos.createOrUpdateFileContents({
         owner,
         repo,
         path,
@@ -91,9 +93,34 @@ const writeToFile = async function (owner, repo, path, payload) {
         //   name: "Octokit Bot",
         //   email: "your-email",
         // },
-    })
+      })
+    } catch (err) {
+      return { body: err.message, status: err.status }
+    } 
 
     return { body: 'Data saved', status: 200 }
 }
 
-module.exports = { writeToFile }
+const acceptRepoInvitation = async function(invitationId) {
+  const response = await octokit.rest.repos.acceptInvitation({
+    invitation_id: invitationId
+  });
+
+  if (!(response.status === 204)) {
+    throw new Error(
+      `problem accepting the repository invite, status code ${response.status}`
+    )
+  }  
+}
+
+const getRepoInvitations = async function() {
+  const response = await octokit.rest.repos.listInvitationsForAuthenticatedUser();
+  const data = response.data
+
+  for (const invite of data) {
+    await acceptRepoInvitation(invite.id)
+    console.log("Accepted invite: ", invite.id)
+  }
+}
+
+module.exports = { writeToFile, getRepoInvitations }
