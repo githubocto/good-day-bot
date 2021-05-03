@@ -31,9 +31,9 @@ const slaxios = axios.create({
 });
 
 // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
-slackEvents.on("app_home_opened", async (event, respond) => {
+slackEvents.on("app_home_opened", async (event) => {
   const args = {
-    user_id: "U01JQD1CFPE",
+    user_id: event.user,
     view: {
       type: "home",
       title: {
