@@ -15,7 +15,7 @@ app.use("/slack/events", slackEvents.requestListener());
 
 app.use(express.json());
 
-const server = app.listen(5000, () => {
+const server = app.listen(process.env.PORT, () => {
   console.log(
     "Express web server is running on port %d in %s mode",
     server.address().port,

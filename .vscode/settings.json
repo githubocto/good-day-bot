@@ -1,0 +1,8 @@
+{
+  "appService.zipIgnorePattern": [
+    "node_modules{,/**}",
+    ".vscode{,/**}"
+  ],
+  "appService.defaultWebAppToDeploy": "/subscriptions/b394e68d-7472-42fd-bb1c-d73cb7f4fd3c/resourceGroups/appsvc_linux_centralus_premium/providers/Microsoft.Web/sites/octo-good-day-bot",
+  "appService.deploySubpath": "."
+}
