@@ -157,34 +157,17 @@ app.get("/", async (req, res) => {
 });
 
 app.post("/interactive", async (req, res) => {
-  // console.log(req.body)
-  // console.log(req.body)
-  // console.log(req.body.payload)
   const payload = JSON.parse(req.body.payload);
-  console.log(payload)
-    
-  // writeToFile(req)
-  // if (Array.isArray(body.payload)) {
-  //   throw new Error(
-  //     `malformed payload`
-  //   )
-  // }
 
-  // const payload = JSON.parse(body.payload)
-  // console.log(payload)
-  // const isSubmitButton = isButtonSubmit(payload)
+  let response = { body: '', status: 200 }
 
-  /*
-  if (!isSubmitButton) {
-    res.sendStatus(200)
-    return
+  // if a block action then assume it's good day log data to write?
+  if (payload?.type === 'block_actions' &&  payload?.actions[0]?.action_id === 'record_day') {
+    const owner = req.body.owner ? req.body.owner : 'githubocto'
+    const repo = req.body.repo ? req.body.repo : 'good-day-demo'
+    const path = req.body.path ? req.body.path : 'good-day.csv'
+    response = await writeToFile(owner, repo, path, payload)
   }
-  */
-
-  // context.log(req.body)
-  // context.log(JSON.stringify(payload))
-
   
-  
-  res.sendStatus(200)
+  res.sendStatus(response.status)
 });

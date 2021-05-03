@@ -1,8 +1,5 @@
 const { Octokit } = require("@octokit/rest")
-
-// import { GetResponseTypeFromEndpointMethod, GetResponseDataTypeFromEndpointMethod } from "@octokit/types";
-// import { isButtonSubmit, parseSlackResponse } from './slack'
-// import { BlockAction, ContextMissingPropertyError } from '@slack/bolt';
+const { isButtonSubmit, parseSlackResponse } = require('./slack')
 
 const key = process.env.GH_API_KEY
 if (typeof key === "undefined") {
@@ -13,31 +10,6 @@ if (typeof key === "undefined") {
 const octokit = new Octokit({
   auth: key
 })
-
-/*
-const acceptRepoInvitation = async function(invitationId: number) {
-  const response = await octokit.rest.repos.acceptInvitation({
-    invitation_id: invitationId
-  });
-
-  if (!(response.status === 204)) {
-    throw new Error(
-      `problem accepting the repository invite, status code ${response.status}`
-    )
-  }  
-}
-*/
-
-/*
-const getRepoInvitations = async function() {
-  const response = await octokit.rest.repos.listInvitationsForAuthenticatedUser();
-  const data = response.data
-
-  for (const invite of data) {
-    await acceptRepoInvitation(invite.id)
-  }
-}
-*/
 
 const getContent = async function (owner, repo, path){
   try {
@@ -65,30 +37,35 @@ const getContent = async function (owner, repo, path){
   }
 }
 
-const writeToFile = async function (req) {
-    const owner = req.body.owner ? req.body.owner : 'githubocto'
-    const repo = req.body.repo ? req.body.repo : 'good-day-demo'
-    const path = req.body.path ? req.body.path : 'good-day.csv'
+const writeToFile = async function (owner, repo, path, payload) {
+    // if (Array.isArray(body.payload)) {
+    //   throw new Error(
+    //     `malformed payload`
+    //   )
+    // }
 
+    // check if user pressed a button and not just dropdowns
+    const isSubmitButton = isButtonSubmit(payload)
+
+    if (!isSubmitButton) {
+        return { body: 'Not a button submit', status: 200 }
+    }
+
+    // get content of good-day.csv
     let file
     try {
         file = await getContent(owner, repo, path)
     } catch (err) {
-        // res.sendStatus(422)
-        // context.res = {
-        //   body: err.message,
-        //   status: 422,
-        // }
-        return
+        return { body: err.message, status: 422 }
     }
 
-    let parsedPayload = 'testWrite'
+    let parsedPayload
     if (file) {
         // if file already exists we don't want to write headers
-        // parsedPayload = parseSlackResponse(payload)
+        parsedPayload = parseSlackResponse(payload)
     } else {
         // if a new file we want to write headeres to the file
-        // parsedPayload = parseSlackResponse(payload, true)
+        parsedPayload = parseSlackResponse(payload, true)
     }
     
     let fileProps =
@@ -115,6 +92,8 @@ const writeToFile = async function (req) {
         //   email: "your-email",
         // },
     })
+
+    return { body: 'Data saved', status: 200 }
 }
 
 module.exports = { writeToFile }
