@@ -45,31 +45,94 @@ slackEvents.on("app_home_opened", async (event) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text:
-              "*Welcome!* \nThis is a home for Stickers app. You can add small notes here!",
+            text: "Welcome! Let's get started.",
+          },
+        },
+        {
+          type: "section",
+          text: {
+            type: "plain_text",
+            text: "1️⃣ Create a GitHub repo",
           },
           accessory: {
             type: "button",
-            action_id: "add_note",
             text: {
               type: "plain_text",
-              text: "Add a Stickie",
-              emoji: true,
+              text: "+ GitHub repo",
             },
+            value: "GitHub",
+            url: "https://github.com/new",
+            action_id: "button-action",
           },
         },
         {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text:
-                ":wave: Hey, my source code is on <https://glitch.com/edit/#!/apphome-demo-keep|glitch>!",
+          type: "section",
+          text: {
+            type: "plain_text",
+            text: "2️⃣ Invite the good-day bot",
+          },
+          accessory: {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "+ Good Day bot",
             },
-          ],
+            value: "GitHub",
+            url: "https://github.com/new",
+            action_id: "button-action",
+          },
         },
         {
-          type: "divider",
+          type: "section",
+          text: {
+            type: "plain_text",
+            text: "3️⃣ Verify your setup",
+          },
+          accessory: {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "Verify",
+            },
+            value: "GitHub",
+            url: "https://github.com/new",
+            action_id: "button-action",
+          },
+        },
+        {
+          type: "image",
+          title: {
+            type: "plain_text",
+            text: "image1",
+            emoji: true,
+          },
+          image_url:
+            "https://api.slack.com/img/blocks/bkb_template_images/onboardingComplex.jpg",
+          alt_text: "image1",
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "Choose what time you would like to be prompted",
+          },
+          accessory: {
+            type: "timepicker",
+            initial_time: "16:00",
+            placeholder: {
+              type: "plain_text",
+              text: "Select time",
+              emoji: true,
+            },
+            action_id: "timepicker-action",
+          },
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "This is a section block with a button.",
+          },
         },
       ],
     },
