@@ -14,9 +14,15 @@ const app = express();
 
 app.use("/slack/events", slackEvents.requestListener());
 
-app.use(express.urlencoded({ extended: true }))
+if (process.env.NODE_ENV === "development") {
+  app.use(express.json());
+} else {
+  app.use(express.urlencoded({ extended: true }))
+}
 
-const server = app.listen(process.env.PORT, () => {
+const port = (process.env.NODE_ENV === "development") ? 3000 : process.env.PORT
+
+const server = app.listen(port, () => {
   console.log(
     "Express web server is running on port %d in %s mode",
     server.address().port,
@@ -152,11 +158,12 @@ app.get("/", async (req, res) => {
 
 app.post("/interactive", async (req, res) => {
   // console.log(req.body)
-
+  // console.log(req.body)
+  // console.log(req.body.payload)
   const payload = JSON.parse(req.body.payload);
   console.log(payload)
     
-  writeToFile(req)
+  // writeToFile(req)
   // if (Array.isArray(body.payload)) {
   //   throw new Error(
   //     `malformed payload`

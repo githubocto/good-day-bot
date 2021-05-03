@@ -67,54 +67,54 @@ const getContent = async function (owner, repo, path){
 
 const writeToFile = async function (req) {
     const owner = req.body.owner ? req.body.owner : 'githubocto'
-  const repo = req.body.repo ? req.body.repo : 'good-day-demo'
-  const path = req.body.path ? req.body.path : 'good-day.csv'
+    const repo = req.body.repo ? req.body.repo : 'good-day-demo'
+    const path = req.body.path ? req.body.path : 'good-day.csv'
 
-  let file
-  try {
-    file = await getContent(owner, repo, path)
-  } catch (err) {
-    // res.sendStatus(422)
-    // context.res = {
-    //   body: err.message,
-    //   status: 422,
-    // }
-    return
-  }
+    let file
+    try {
+        file = await getContent(owner, repo, path)
+    } catch (err) {
+        // res.sendStatus(422)
+        // context.res = {
+        //   body: err.message,
+        //   status: 422,
+        // }
+        return
+    }
 
-  let parsedPayload = 'testWrite'
-  if (file) {
-    // if file already exists we don't want to write headers
-    // parsedPayload = parseSlackResponse(payload)
-  } else {
-    // if a new file we want to write headeres to the file
-    // parsedPayload = parseSlackResponse(payload, true)
-  }
-  
-  let fileProps =
-    file === null
-      ? {
-          content: Buffer.from(parsedPayload + "\n").toString("base64"),
-        }
-      : {
-          content: Buffer.from(file.content + "\n" + parsedPayload).toString("base64"),
-          sha: file.sha,
-        }
-  const { data } = await octokit.repos.createOrUpdateFileContents({
-    owner,
-    repo,
-    path,
-    message: "Good Day update",
-    ...fileProps,
-    // committer: {
-    //   name: `Good Day Bot`,
-    //   email: "your-email",
-    // }
-    // author: {
-    //   name: "Octokit Bot",
-    //   email: "your-email",
-    // },
-  })
+    let parsedPayload = 'testWrite'
+    if (file) {
+        // if file already exists we don't want to write headers
+        // parsedPayload = parseSlackResponse(payload)
+    } else {
+        // if a new file we want to write headeres to the file
+        // parsedPayload = parseSlackResponse(payload, true)
+    }
+    
+    let fileProps =
+        file === null
+        ? {
+            content: Buffer.from(parsedPayload + "\n").toString("base64"),
+            }
+        : {
+            content: Buffer.from(file.content + "\n" + parsedPayload).toString("base64"),
+            sha: file.sha,
+            }
+    const { data } = await octokit.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        path,
+        message: "Good Day update",
+        ...fileProps,
+        // committer: {
+        //   name: `Good Day Bot`,
+        //   email: "your-email",
+        // }
+        // author: {
+        //   name: "Octokit Bot",
+        //   email: "your-email",
+        // },
+    })
 }
 
 module.exports = { writeToFile }

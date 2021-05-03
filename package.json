@@ -13,6 +13,10 @@
     "query-string": "^7.0.0"
   },
   "scripts": {
+    "dev": "DEBUG=@slack/events-api:* NODE_ENV=development nodemon node index.js",
     "start": "DEBUG=@slack/events-api:* node index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
   }
 }
