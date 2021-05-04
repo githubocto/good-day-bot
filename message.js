@@ -215,9 +215,7 @@ const messageBlocks = [
   },
 ];
 
-const promptUser = async (user) => {
-  console.log("promptUser", user);
-
+const promptUser = async (channelId) => {
   const date = new Date();
   const dateString = date.toLocaleDateString();
   const dateFormattedString = date.toDateString();
@@ -236,8 +234,7 @@ const promptUser = async (user) => {
   ];
 
   const args = {
-    // user_id: slackUserId,
-    channel: user.channelid,
+    channel: channelId,
     blocks,
   };
   try {

@@ -122,8 +122,18 @@ app.post("/notify", async (req, res) => {
     return;
   }
 
-  res.status(200).send(req.body.user_id);
+  try {
+    const slackRes = await slaxios.post(`/conversations.open`, {
+      users: req.body.user_id,
+    });
 
-  // TODO: logic for publishing new view!
-  // do something with req.body.user_id
+    if (slackRes.data.channel.id) {
+      await promptUser(slackRes.data.channel.id);
+    }
+
+    res.status(200).send(req.body.user_id);
+    return;
+  } catch (e) {
+    console.error("Failed to open conversation for user", req.body.user_id);
+  }
 });
