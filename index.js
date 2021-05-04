@@ -5,7 +5,9 @@ const { createEventAdapter } = require("@slack/events-api");
 
 const { writeToFile } = require("./github");
 const { getHomeBlocks, saveUser } = require("./onboarding");
+const { getUser } = require("./user");
 const { slaxios } = require("./api");
+const { promptUser } = require("./message");
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
 
@@ -30,25 +32,13 @@ const server = app.listen(port, () => {
 
 // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
 slackEvents.on("app_home_opened", async (event) => {
-  const args = {
-    user_id: event.user,
-    view: {
-      type: "home",
-      title: {
-        type: "plain_text",
-        text: "Keep notes!",
-      },
-      blocks: getHomeBlocks(),
-    },
-  };
-  try {
-    const res = await slaxios.post(`views.publish`, args);
-    if (!res.data.ok) {
-      console.log(res.data);
-    }
-  } catch (e) {
-    console.error(e);
-  }
+  const slackUserId = event.user;
+  saveUser({
+    slackUserId,
+    channelId: event.channel,
+  });
+  const blocks = getHomeBlocks();
+  await updateHome({ slackUserId, blocks });
 });
 
 app.get("/", async (req, res) => {
@@ -57,12 +47,16 @@ app.get("/", async (req, res) => {
 
 app.post("/interactive", async (req, res) => {
   const payload = JSON.parse(req.body.payload);
+  const slackUserId = payload.user.id;
+
+  const user = await getUser(slackUserId);
 
   const actionId = payload.actions[0].action_id;
+
   if (actionId === "onboarding-timepicker-action") {
     const newPromptTime = payload.actions[0].selected_time;
     saveUser({
-      slackUserId: payload.user.id,
+      slackUserId,
       promptTime: newPromptTime,
     });
   } else if (actionId === "onboarding-github-repo") {
@@ -73,8 +67,6 @@ app.post("/interactive", async (req, res) => {
       return res.status(400).send("Invalid repo URL");
     }
 
-    const slackUserId = payload.user.id;
-
     saveUser({
       slackUserId,
       repoOwner: owner,
@@ -82,25 +74,14 @@ app.post("/interactive", async (req, res) => {
     });
 
     const newBlocks = getHomeBlocks({ repo: wholeRepoString, isSaved: true });
+    await updateHome({ slackUserId, blocks: newBlocks });
+  } else if (actionId === "record_day") {
+    const error = await writeToFile(user || {}, payload);
 
-    const args = {
-      user_id: slackUserId,
-      view: {
-        type: "home",
-        title: {
-          type: "plain_text",
-          text: "Keep notes!",
-        },
-        blocks: newBlocks,
-      },
-    };
-    try {
-      await slaxios.post(`views.publish`, args);
-    } catch (e) {
-      console.error(e);
+    if (error) {
+      res.sendStatus(error.status);
+      return;
     }
-  } else {
-    writeToFile(req);
   }
 
   // if (Array.isArray(body.payload)) {
@@ -109,18 +90,24 @@ app.post("/interactive", async (req, res) => {
   //   )
   // }
 
-  let response = { body: "", status: 200 };
-
-  // if a block action then assume it's good day log data to write?
-  if (
-    payload?.type === "block_actions" &&
-    payload?.actions[0]?.action_id === "record_day"
-  ) {
-    const owner = req.body.owner ? req.body.owner : "githubocto";
-    const repo = req.body.repo ? req.body.repo : "good-day-demo";
-    const path = req.body.path ? req.body.path : "good-day.csv";
-    response = await writeToFile(owner, repo, path, payload);
-  }
-
   res.sendStatus(200);
 });
+
+const updateHome = async ({ slackUserId, blocks }) => {
+  const args = {
+    user_id: slackUserId,
+    view: {
+      type: "home",
+      title: {
+        type: "plain_text",
+        text: "Keep notes!",
+      },
+      blocks: blocks,
+    },
+  };
+  try {
+    await slaxios.post(`views.publish`, args);
+  } catch (e) {
+    console.error(e);
+  }
+};

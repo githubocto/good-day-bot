@@ -3,24 +3,26 @@ const axios = require("axios");
 const { slaxios } = require("./api");
 
 const saveUser = async (config) => {
-  const { slackUserId, repoOwner, repoName, timezone, promptTime } = config;
+  const {
+    slackUserId,
+    repoOwner,
+    repoName,
+    timezone,
+    promptTime,
+    channelId,
+  } = config;
 
   if (!slackUserId) {
     return;
   }
 
   const findUserSql = `SELECT * FROM users where slackid='${slackUserId}' LIMIT 1`;
-  console.log("findUserSql", findUserSql);
 
   const { rows: users } = await pool.query(findUserSql);
   let user = users[0];
-  console.log("users", users);
-  console.log("user", user);
 
   if (!user) {
     const createUserSql = `INSERT INTO USERS (slackid) VALUES ('${slackUserId}')`;
-
-    console.log("createUserSql", createUserSql);
 
     await pool.query(createUserSql);
   }
@@ -35,6 +37,7 @@ const saveUser = async (config) => {
   const metrics = {
     ghrepo: repoName,
     ghuser: repoOwner,
+    channelid: channelId,
     timezone: userDataRes.data.user.tz,
     prompt_time: promptTime,
   };
@@ -42,7 +45,6 @@ const saveUser = async (config) => {
   const keys = Object.keys(metrics).filter((key) => metrics[key]);
   const valuesString = keys.map((key) => `${key}='${metrics[key]}'`).join(", ");
   const updateUserSql = `UPDATE USERS SET ${valuesString} WHERE slackid='${slackUserId}'`;
-  console.log("updateUserSql", updateUserSql);
 
   await pool.query(updateUserSql);
 };
