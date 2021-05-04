@@ -18,7 +18,7 @@ const app = express();
 
 app.use("/slack/events", slackEvents.requestListener());
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 const port = process.env.NODE_ENV === "development" ? 3000 : process.env.PORT;
 
@@ -45,53 +45,57 @@ app.get("/", async (req, res) => {
   res.send("beep boop");
 });
 
-app.post("/interactive", async (req, res) => {
-  const payload = JSON.parse(req.body.payload);
-  const slackUserId = payload.user.id;
+app.post(
+  "/interactive",
+  express.urlencoded({ extended: true }),
+  async (req, res) => {
+    const payload = JSON.parse(req.body.payload);
+    const slackUserId = payload.user.id;
 
-  const user = await getUser(slackUserId);
+    const user = await getUser(slackUserId);
 
-  const actionId = payload.actions[0].action_id;
+    const actionId = payload.actions[0].action_id;
 
-  if (actionId === "onboarding-timepicker-action") {
-    const newPromptTime = payload.actions[0].selected_time;
-    saveUser({
-      slackUserId,
-      promptTime: newPromptTime,
-    });
-  } else if (actionId === "onboarding-github-repo") {
-    const repo = payload.actions[0].value;
-    const wholeRepoString = repo.split("github.com/")[1] || "";
-    const [owner, name] = wholeRepoString.split("/");
-    if (!owner || !name) {
-      return res.status(400).send("Invalid repo URL");
+    if (actionId === "onboarding-timepicker-action") {
+      const newPromptTime = payload.actions[0].selected_time;
+      saveUser({
+        slackUserId,
+        promptTime: newPromptTime,
+      });
+    } else if (actionId === "onboarding-github-repo") {
+      const repo = payload.actions[0].value;
+      const wholeRepoString = repo.split("github.com/")[1] || "";
+      const [owner, name] = wholeRepoString.split("/");
+      if (!owner || !name) {
+        return res.status(400).send("Invalid repo URL");
+      }
+
+      saveUser({
+        slackUserId,
+        repoOwner: owner,
+        repoName: name,
+      });
+
+      const newBlocks = getHomeBlocks({ repo: wholeRepoString, isSaved: true });
+      await updateHome({ slackUserId, blocks: newBlocks });
+    } else if (actionId === "record_day") {
+      const error = await writeToFile(user || {}, payload);
+
+      if (error) {
+        res.sendStatus(error.status);
+        return;
+      }
     }
 
-    saveUser({
-      slackUserId,
-      repoOwner: owner,
-      repoName: name,
-    });
+    // if (Array.isArray(body.payload)) {
+    //   throw new Error(
+    //     `malformed payload`
+    //   )
+    // }
 
-    const newBlocks = getHomeBlocks({ repo: wholeRepoString, isSaved: true });
-    await updateHome({ slackUserId, blocks: newBlocks });
-  } else if (actionId === "record_day") {
-    const error = await writeToFile(user || {}, payload);
-
-    if (error) {
-      res.sendStatus(error.status);
-      return;
-    }
+    res.sendStatus(200);
   }
-
-  // if (Array.isArray(body.payload)) {
-  //   throw new Error(
-  //     `malformed payload`
-  //   )
-  // }
-
-  res.sendStatus(200);
-});
+);
 
 const updateHome = async ({ slackUserId, blocks }) => {
   const args = {
@@ -115,7 +119,10 @@ const updateHome = async ({ slackUserId, blocks }) => {
 app.post("/notify", async (req, res) => {
   if (!req.body.user_id) {
     res.status(400).send("You must provide a User ID");
+    return;
   }
+
+  res.status(200).send(req.body.user_id);
 
   // TODO: logic for publishing new view!
   // do something with req.body.user_id
