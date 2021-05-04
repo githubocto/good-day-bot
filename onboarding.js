@@ -47,20 +47,29 @@ const saveUser = async (config) => {
   await pool.query(updateUserSql);
 };
 
-const getHomeBlocks = ({ repo } = {}) => {
+const getHomeBlocks = ({ repo, timezone, isSaved } = {}) => {
   return [
     {
-      type: "section",
+      type: "header",
       text: {
-        type: "mrkdwn",
-        text: "Welcome! Let's get started.",
+        type: "plain_text",
+        text: "Good Day",
+        emoji: true,
       },
     },
     {
       type: "section",
       text: {
-        type: "plain_text",
-        text: "1️⃣ Create a GitHub repo",
+        type: "mrkdwn",
+        text: "Welcome to Good Day! There are just a few steps to get set up.",
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text:
+          "1️⃣\n*Create a GitHub repo*\nClick the link on the right and create a new empty GitHub repository. It can be named anything you like, such as *good-day*.",
       },
       accessory: {
         type: "button",
@@ -76,18 +85,27 @@ const getHomeBlocks = ({ repo } = {}) => {
     {
       type: "section",
       text: {
-        type: "plain_text",
-        text: "2️⃣ Invite the good-day bot",
+        type: "mrkdwn",
+        text:
+          "2️⃣\n*Invite the good-day bot*\nIn your new GitHub repo, click over to *Settings* and into *Manage access* (in the sidebar).\nOnce you click the *Invite a collaborator* button, search for `Good day bot` and add the first option.",
       },
-      accessory: {
-        type: "button",
-        text: {
-          type: "plain_text",
-          text: "+ Good Day bot",
-        },
-        value: "GitHub",
-        url: "https://github.com/new",
-        action_id: "button-action",
+      // accessory: {
+      //   type: "button",
+      //   text: {
+      //     type: "plain_text",
+      //     text: "+ Good Day bot",
+      //   },
+      //   value: "GitHub",
+      //   url: "https://github.com/new",
+      //   action_id: "button-action",
+      // },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text:
+          "3️⃣\n*Check your setup*\nAll set? Go to the home page of your repository and copy + paste the url here:",
       },
     },
     {
@@ -99,7 +117,7 @@ const getHomeBlocks = ({ repo } = {}) => {
       },
       label: {
         type: "plain_text",
-        text: "Paste the URL of your GitHub repo:",
+        text: "Paste the URL of your GitHub repo, then hit enter:",
         emoji: true,
       },
     },
@@ -107,25 +125,27 @@ const getHomeBlocks = ({ repo } = {}) => {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `🎉 Success! Repo saved as ${repo}`,
+        text: `🎉 Great success! We'll save your data in *${repo}*`,
       },
     },
-    {
-      type: "image",
-      title: {
-        type: "plain_text",
-        text: "image1",
-        emoji: true,
-      },
-      image_url:
-        "https://api.slack.com/img/blocks/bkb_template_images/onboardingComplex.jpg",
-      alt_text: "image1",
-    },
+    // {
+    //   type: "image",
+    //   title: {
+    //     type: "plain_text",
+    //     text: "image1",
+    //     emoji: true,
+    //   },
+    //   image_url:
+    //     "https://api.slack.com/img/blocks/bkb_template_images/onboardingComplex.jpg",
+    //   alt_text: "image1",
+    // },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "Choose what time you would like to be prompted",
+        text: `What time you would like me to ask how your day went? _This is in your timezone${
+          timezone ? ` (${timezone})` : ""
+        }_`,
       },
       accessory: {
         type: "timepicker",
@@ -138,6 +158,21 @@ const getHomeBlocks = ({ repo } = {}) => {
         action_id: "onboarding-timepicker-action",
       },
     },
+    ...(isSaved
+      ? [
+          {
+            type: "divider",
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "👏 All set! Looking forward to catching up soon!",
+              emoji: true,
+            },
+          },
+        ]
+      : []),
   ].filter(Boolean);
 };
 

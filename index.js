@@ -43,7 +43,9 @@ slackEvents.on("app_home_opened", async (event) => {
   };
   try {
     const res = await slaxios.post(`views.publish`, args);
-    console.log(res);
+    if (!res.data.ok) {
+      console.log(res.data);
+    }
   } catch (e) {
     console.error(e);
   }
@@ -79,7 +81,7 @@ app.post("/interactive", async (req, res) => {
       repoName: name,
     });
 
-    const newBlocks = getHomeBlocks({ repo: wholeRepoString });
+    const newBlocks = getHomeBlocks({ repo: wholeRepoString, isSaved: true });
 
     const args = {
       user_id: slackUserId,
