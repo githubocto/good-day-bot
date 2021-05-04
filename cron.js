@@ -11,9 +11,12 @@ cron.schedule("0 * * * *", async () => {
 	  extract(hour from now() at time zone timezone) = extract(hour FROM TO_TIMESTAMP(prompt_time, 'HH24:MI'))
   `;
 
-  const { rows: users } = await pool.query(usersToPromptQuery);
-
-  users.forEach((user) => {
-    // TODO: logic for publishing new view!
-  });
+  try {
+    const { rows: users } = await pool.query(usersToPromptQuery);
+    users.forEach((user) => {
+      // TODO: logic for publishing new view!
+    });
+  } catch (e) {
+    console.error("Error fetching users", e);
+  }
 });
