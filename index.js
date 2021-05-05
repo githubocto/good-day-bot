@@ -7,7 +7,7 @@ const { writeToFile } = require("./github");
 const { getHomeBlocks, saveUser } = require("./onboarding");
 const { getUser } = require("./user");
 const { slaxios } = require("./api");
-const { promptUser } = require("./message");
+const { promptUser, checkRepo, promptCheckRepo, parseSlackResponse } = require("./message");
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
 
@@ -53,36 +53,56 @@ app.post("/interactive", async (req, res) => {
 
   const actionId = payload.actions[0].action_id;
 
-  if (actionId === "onboarding-timepicker-action") {
-    const newPromptTime = payload.actions[0].selected_time;
-    saveUser({
-      slackUserId,
-      promptTime: newPromptTime,
-    });
-  } else if (actionId === "onboarding-github-repo") {
-    const repo = payload.actions[0].value;
-    const wholeRepoString = repo.split("github.com/")[1] || "";
-    const [owner, name] = wholeRepoString.split("/");
-    if (!owner || !name) {
-      return res.status(400).send("Invalid repo URL");
-    }
+  switch(actionId) {
+    case 'onboarding-github-repo':
+      const repo = payload.actions[0].value;
+      const wholeRepoString = repo.split("github.com/")[1] || "";
+      const [owner, name] = wholeRepoString.split("/");
+      if (!owner || !name) {
+        return res.status(400).send("Invalid repo URL");
+      }
 
-    saveUser({
-      slackUserId,
-      repoOwner: owner,
-      repoName: name,
-    });
+      saveUser({
+        slackUserId,
+        repoOwner: owner,
+        repoName: name,
+      });
 
-    const newBlocks = getHomeBlocks({ repo: wholeRepoString, isSaved: true });
-    await updateHome({ slackUserId, blocks: newBlocks });
-  } else if (actionId === "record_day") {
-    const error = await writeToFile(user || {}, payload);
+      const newBlocks = getHomeBlocks({ repo: wholeRepoString, isSaved: true });
+      await updateHome({ slackUserId, blocks: newBlocks });
+      break;
+    case 'onboarding-timepicker-action':
+      const newPromptTime = payload.actions[0].selected_time;
+      saveUser({
+        slackUserId,
+        promptTime: newPromptTime,
+      });
 
-    if (error) {
-      res.sendStatus(error.status);
-      return;
-    }
+      promptCheckRepo(user)
+      break;
+    case 'check-repo':
+      checkRepo(user)
+      break;
+    case 'record_day':
+      const data = await parseSlackResponse(payload)
+      const error = await writeToFile(user || {}, data);
+
+      if (error) {
+        res.sendStatus(error.status);
+        return;
+      }
+      break;
+    default:
+
   }
+
+  // if (actionId === "onboarding-timepicker-action") {
+    
+  // } else if (actionId === "onboarding-github-repo") {
+    
+  // } else if (actionId === "record_day") {
+    
+  // }
 
   // if (Array.isArray(body.payload)) {
   //   throw new Error(

@@ -1,6 +1,7 @@
 const axios = require("axios");
 const { slaxios } = require("./api");
 const { EmojiConvertor } = require("emoji-js");
+const { getRepoInvitations, isBotInRepo, isBotWriterInRepo } = require("./github");
 
 // Slack convertes emojis to shortcode. We need to convert back to unicode
 const emoji = new EmojiConvertor.EmojiConvertor();
@@ -215,6 +216,165 @@ const messageBlocks = [
   },
 ];
 
+const repoCheckBlock = [
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "Press the button to check if your repository looks good to go!"
+    },
+    "accessory": {
+      "type": "button",
+      "text": {
+        "type": "plain_text",
+        "text": "Check Repo",
+        "emoji": true
+      },
+      "value": "check_repo",
+      "action_id": "check-repo"
+    }
+  }
+]
+
+const addedSuccessfullyBlock = [
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "You're all set 🙌! You'll get a message when it's time to fill in your good day form."
+    }
+  }
+]
+
+const getWritePermissionBlock = (repoUrl = '') => {
+  return [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": `Oops, you have to grant the bot *'write'* permission on your repository. Go to <${repoUrl}|${repoUrl}> to change that.`
+      }
+    },
+    {
+      "type": "image",
+      "image_url": "https://i1.wp.com/thetempest.co/wp-content/uploads/2017/08/The-wise-words-of-Michael-Scott-Imgur-2.jpg?w=1024&ssl=1",
+      "alt_text": "inspiration"
+    }
+  ]
+}
+
+const getAddBotBlock = (repoUrl = '') => {
+  return [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": `Make sure to add the \`good-day-bot\` as a collaborator with *write* permissions to your repo. Go to <${repoUrl}|${repoUrl}> to do that.`
+      }
+    },
+    {
+      "type": "image",
+      "image_url": "https://i1.wp.com/thetempest.co/wp-content/uploads/2017/08/The-wise-words-of-Michael-Scott-Imgur-2.jpg?w=1024&ssl=1",
+      "alt_text": "inspiration"
+    }
+  ]
+}
+
+const promptCheckRepo = async (user) => {
+  const args = {
+    // user_id: slackUserId,
+    channel: user.channelid,
+    blocks: repoCheckBlock,
+  };
+  try {
+    const res = await slaxios.post(`chat.postMessage`, args);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const checkRepo = async (user) => {
+  console.log("check repo")
+  // console.log(user)
+  const ghuser = user.ghuser
+  const ghrepo = user.ghrepo
+
+  await getRepoInvitations(ghuser, ghrepo)
+
+  const isInRepo = await isBotInRepo(ghuser, ghrepo)
+  if (!isInRepo) {
+    await promptUserForAddingBot(user)
+    return
+  }
+
+  const isWriterInRepo = await isBotWriterInRepo(ghuser, ghrepo)
+  if (!isWriterInRepo) {
+    await promptUserForWritePermissions(user)
+    return
+  }
+
+  // tell user they are setup correctly
+  await promptUserSetupCorrectly(user)
+};
+
+const promptUserForAddingBot = async (user) => {
+  const ghuser = user.ghuser
+  const ghrepo = user.ghrepo
+
+  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`
+  const args = {
+    // user_id: slackUserId,
+    channel: user.channelid,
+    blocks: getAddBotBlock(repoUrl),
+  };
+
+  try {
+    const res = await slaxios.post(`chat.postMessage`, args);
+
+    promptCheckRepo(user)
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+const promptUserForWritePermissions = async (user) => {
+  const ghuser = user.ghuser
+  const ghrepo = user.ghrepo
+
+  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`
+  const args = {
+    // user_id: slackUserId,
+    channel: user.channelid,
+    blocks: getWritePermissionBlock(repoUrl),
+  };
+
+  try {
+    const res = await slaxios.post(`chat.postMessage`, args);
+
+    promptCheckRepo(user)
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+const promptUserSetupCorrectly = async (user) => {
+  const ghuser = user.ghuser
+  const ghrepo = user.ghrepo
+
+  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`
+  const args = {
+    // user_id: slackUserId,
+    channel: user.channelid,
+    blocks: addedSuccessfullyBlock,
+  };
+
+  try {
+    const res = await slaxios.post(`chat.postMessage`, args);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 const promptUser = async (user) => {
   console.log("promptUser", user);
 
@@ -243,19 +403,17 @@ const promptUser = async (user) => {
   try {
     const res = await slaxios.post(`chat.postMessage`, args);
 
-    console.log("res", res.data);
+    // console.log("res", res.data);
   } catch (e) {
     console.error(e);
   }
 };
 
 // TODO: Create a type for our payload once we decide on parameters
-const parseSlackResponse = (payload, newFile = false) => {
+const parseSlackResponse = (payload) => {
   // const options = slackOptions(payload);
-  console.log("payload", payload);
   const blocks = payload.message.blocks;
   const date = blocks[0].block_id;
-  console.log("date", date);
   const state = payload.state.values;
   // console.log("state", state);
 
@@ -278,24 +436,12 @@ const parseSlackResponse = (payload, newFile = false) => {
   // convert shortcode emojis to unicode
   parsedResponseBody = emoji.replace_colons(parsedResponseBody);
 
-  if (newFile) {
-    return parsedResponseHeader + "\n" + parsedResponseBody;
-  }
+  return { header: parsedResponseHeader, body: parsedResponseBody }
+  // if (newFile) {
+  //   return parsedResponseHeader + "\n" + parsedResponseBody;
+  // }
 
-  return parsedResponseBody;
+  // return parsedResponseBody;
 };
 
-// is user submitting block by clicking the button? or just selecting from dropdowns
-const isButtonSubmit = (payload) => {
-  const actions = payload.actions;
-
-  for (const action of actions) {
-    if (action.type === "button" && action.action_id === "record_day") {
-      return true;
-    }
-  }
-
-  return false;
-};
-
-module.exports = { promptUser, isButtonSubmit, parseSlackResponse };
+module.exports = { promptUser, parseSlackResponse, promptCheckRepo, checkRepo };
