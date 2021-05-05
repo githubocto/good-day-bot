@@ -214,13 +214,34 @@ const getWritePermissionBlock = (repoUrl = '') => [
       text: `Oops, you have to grant the bot *'write'* permission on your repository. Go to <${repoUrl}|${repoUrl}> to change that.`,
     },
   },
-  {
-    type: 'image',
-    image_url:
-      'https://i1.wp.com/thetempest.co/wp-content/uploads/2017/08/The-wise-words-of-Michael-Scott-Imgur-2.jpg?w=1024&ssl=1',
-    alt_text: 'inspiration',
-  },
 ];
+
+export const sendImageToSlack = async (imagePath: string, imageName: string, user: any = {}) => {
+  const slackRes = await slaxios.post('/conversations.open', {
+    users: user.slackid,
+  });
+  const channelId = slackRes.data.channel.id;
+  if (!channelId) {
+    console.log('Channel not found for user ', user.slackid);
+    return;
+  }
+
+  const form = new FormData();
+  form.append('title', 'Good Day summary II');
+  form.append('filename', imageName);
+  form.append('filetype', 'auto');
+  form.append('channels', channelId);
+  form.append('file', fs.createReadStream(imagePath));
+
+  try {
+    // console.log(form, form);
+    const res = await slaxios.post('files.upload', form, {
+      headers: form.getHeaders(),
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
 
 const getAddBotBlock = (repoUrl = '') => [
   {
@@ -229,12 +250,6 @@ const getAddBotBlock = (repoUrl = '') => [
       type: 'mrkdwn',
       text: `Make sure to add the \`good-day-bot\` as a collaborator with *write* permissions to your repo. Go to <${repoUrl}|${repoUrl}> to do that.`,
     },
-  },
-  {
-    type: 'image',
-    image_url:
-      'https://i1.wp.com/thetempest.co/wp-content/uploads/2017/08/The-wise-words-of-Michael-Scott-Imgur-2.jpg?w=1024&ssl=1',
-    alt_text: 'inspiration',
   },
 ];
 
@@ -265,6 +280,9 @@ const promptUserForAddingBot = async (user: any) => {
   try {
     const res = await slaxios.post('chat.postMessage', args);
 
+    const dirPath = path.join(__dirname, '../assets/');
+    await sendImageToSlack(`${dirPath}invite-permission.png`, 'add-user.png', user);
+
     promptCheckRepo(user);
   } catch (e) {
     console.error(e);
@@ -284,6 +302,9 @@ const promptUserForWritePermissions = async (user: any) => {
 
   try {
     const res = await slaxios.post('chat.postMessage', args);
+
+    const dirPath = path.join(__dirname, '../assets/');
+    await sendImageToSlack(`${dirPath}write-permission.png`, 'add-user.png', user);
 
     promptCheckRepo(user);
   } catch (e) {
@@ -385,39 +406,4 @@ export const parseSlackResponse = (payload: any) => {
   });
 
   return data;
-};
-
-export const getImage = async (fileName: string) => {
-  const res = await fs.createReadStream(fileName);
-  console.log('image data', res);
-};
-
-const dirPath = path.join(__dirname, '../assets/');
-getImage(`${dirPath}invite-permission.png`);
-
-export const sendImageToSlack = async (imageData: string, imageName: string, user: any = {}) => {
-  const slackRes = await slaxios.post('/conversations.open', {
-    users: user.slackid,
-  });
-  const channelId = slackRes.data.channel.id;
-  if (!channelId) {
-    console.log('Channel not found for user ', user.slackid);
-    return;
-  }
-
-  const form = new FormData();
-  form.append('title', 'Good Day summary II');
-  form.append('filename', imageName);
-  form.append('filetype', 'auto');
-  form.append('channels', channelId);
-  form.append('file', fs.createReadStream('/tmp/chart.png'));
-
-  try {
-    // console.log(form, form);
-    const res = await slaxios.post('files.upload', form, {
-      headers: form.getHeaders(),
-    });
-  } catch (e) {
-    console.log(e);
-  }
 };
