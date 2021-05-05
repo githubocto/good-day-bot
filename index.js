@@ -131,3 +131,12 @@ const updateHome = async ({ slackUserId, blocks }) => {
     console.error(e);
   }
 };
+
+app.post("/notify", async (req, res) => {
+  if (!req.body.user_id) {
+    res.status(400).send("You must provide a User ID");
+  }
+
+  // TODO: logic for publishing new view!
+  // do something with req.body.user_id
+});
