@@ -8,6 +8,7 @@ import { writeToFile } from './github';
 import { getHomeBlocks, saveUser } from './onboarding';
 import { getUser } from './user';
 import { slaxios } from './api';
+import { createChartsForUser } from './chart';
 import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse } from './message';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
@@ -27,7 +28,7 @@ app.listen(port, () => {
   console.log(`Express running on port ${port} in ${app.settings.env} mode`);
 });
 
-const updateHome = async (slackUserId: string, blocks: any) => {
+export const updateHome = async (slackUserId: string, blocks: any) => {
   const args = {
     user_id: slackUserId,
     view: {
@@ -40,7 +41,8 @@ const updateHome = async (slackUserId: string, blocks: any) => {
     },
   };
   try {
-    await slaxios.post('views.publish', args);
+    const res = await slaxios.post('views.publish', args);
+    console.log(res.data);
   } catch (e) {
     console.error(e);
   }
@@ -95,8 +97,9 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req, res
         promptTime: newPromptTime,
       });
 
-      await promptCheckRepo(user); // TODO: change to whatever the appropriate trigger should be
-      // await promptUser(user.channelid)
+      // await promptCheckRepo(user); // TODO: change to whatever the appropriate trigger should be
+      // await promptUser(user.channelid);
+      await createChartsForUser(user);
       break;
     }
     case 'check-repo': {
