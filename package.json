@@ -1,9 +1,39 @@
 {
   "name": "octo-goodday-server",
-  "version": "1.0.0",
+  "version": "0.0.1",
+  "description": "A Good Day Slack bot",
   "main": "index.js",
-  "author": "Matt Rothenberg <mattrothenberg@github.com>",
+  "author": "Github OCTO",
   "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "run-s build lint:staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts}": [
+      "npm run prettier:fix",
+      "npm run lint:fix"
+    ]
+  },
+  "nodemonConfig": {
+    "delay": "400"
+  },
+  "scripts": {
+    "dev": "npm-run-all -l build -p build:watch start:watch",
+    "start": "node dist/index.js",
+    "start:watch": "nodemon -w dist -e js dist/index.js",
+    "build": "tsc -p src/ --pretty",
+    "build:watch": "npm run build -- -w",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "lint:fix": "npm run lint -- --fix",
+    "lint:staged": "lint-staged",
+    "prettier": "prettier -l \"src/**/*.ts\"",
+    "prettier:fix": "npm run prettier -- --write"
+  },
   "dependencies": {
     "@octokit/rest": "^18.5.3",
     "@slack/events-api": "^3.0.0",
@@ -14,11 +44,21 @@
     "pg": "^8.6.0",
     "query-string": "^7.0.0"
   },
-  "scripts": {
-    "dev": "DEBUG=@slack/events-api:* NODE_ENV=development nodemon node index.js",
-    "start": "DEBUG=@slack/events-api:* node index.js"
-  },
   "devDependencies": {
-    "nodemon": "^2.0.7"
+    "@types/dotenv": "^8.2.0",
+    "@types/emoji-js": "^3.5.0",
+    "@types/express": "^4.17.11",
+    "@types/node": "^15.0.2",
+    "@types/pg": "^7.14.11",
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
+    "eslint": "^7.25.0",
+    "eslint-plugin-import": "^2.22.1",
+    "husky": "^6.0.0",
+    "nodemon": "^2.0.7",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.2.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
   }
 }
