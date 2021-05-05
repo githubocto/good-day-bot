@@ -335,7 +335,7 @@ const promptUserSetupCorrectly = async (user: User) => {
 };
 
 export const promptUser = async (channelId: string) => {
-  const date = d3.timeDay.offset(new Date(), -1);
+  const date = new Date();
   const dateString = date.toLocaleDateString();
   const dateFormattedString = date.toDateString();
 
