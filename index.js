@@ -7,7 +7,7 @@ const { writeToFile } = require("./github");
 const { getHomeBlocks, saveUser } = require("./onboarding");
 const { getUser } = require("./user");
 const { slaxios } = require("./api");
-const { promptUser } = require("./message");
+const { promptUser, checkRepo, promptCheckRepo, parseSlackResponse } = require("./message");
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
 
@@ -45,24 +45,16 @@ app.get("/", async (req, res) => {
   res.send("beep boop");
 });
 
-app.post(
-  "/interactive",
-  express.urlencoded({ extended: true }),
-  async (req, res) => {
-    const payload = JSON.parse(req.body.payload);
-    const slackUserId = payload.user.id;
+app.post("/interactive", express.urlencoded({ extended: true }), async (req, res) => {
+  const payload = JSON.parse(req.body.payload);
+  const slackUserId = payload.user.id;
 
-    const user = await getUser(slackUserId);
+  const user = await getUser(slackUserId);
 
-    const actionId = payload.actions[0].action_id;
+  const actionId = payload.actions[0].action_id;
 
-    if (actionId === "onboarding-timepicker-action") {
-      const newPromptTime = payload.actions[0].selected_time;
-      saveUser({
-        slackUserId,
-        promptTime: newPromptTime,
-      });
-    } else if (actionId === "onboarding-github-repo") {
+  switch(actionId) {
+    case 'onboarding-github-repo':
       const repo = payload.actions[0].value;
       const wholeRepoString = repo.split("github.com/")[1] || "";
       const [owner, name] = wholeRepoString.split("/");
@@ -78,24 +70,48 @@ app.post(
 
       const newBlocks = getHomeBlocks({ repo: wholeRepoString, isSaved: true });
       await updateHome({ slackUserId, blocks: newBlocks });
-    } else if (actionId === "record_day") {
-      const error = await writeToFile(user || {}, payload);
+      break;
+    case 'onboarding-timepicker-action':
+      const newPromptTime = payload.actions[0].selected_time;
+      saveUser({
+        slackUserId,
+        promptTime: newPromptTime,
+      });
+
+      promptCheckRepo(user)
+      break;
+    case 'check-repo':
+      checkRepo(user)
+      break;
+    case 'record_day':
+      const data = await parseSlackResponse(payload)
+      const error = await writeToFile(user || {}, data);
 
       if (error) {
         res.sendStatus(error.status);
         return;
       }
-    }
+      break;
+    default:
 
-    // if (Array.isArray(body.payload)) {
-    //   throw new Error(
-    //     `malformed payload`
-    //   )
-    // }
-
-    res.sendStatus(200);
   }
-);
+
+  // if (actionId === "onboarding-timepicker-action") {
+    
+  // } else if (actionId === "onboarding-github-repo") {
+    
+  // } else if (actionId === "record_day") {
+    
+  // }
+
+  // if (Array.isArray(body.payload)) {
+  //   throw new Error(
+  //     `malformed payload`
+  //   )
+  // }
+
+  res.sendStatus(200);
+});
 
 const updateHome = async ({ slackUserId, blocks }) => {
   const args = {

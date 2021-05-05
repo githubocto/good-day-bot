@@ -1,5 +1,7 @@
 const { Octokit } = require("@octokit/rest");
-const { isButtonSubmit, parseSlackResponse } = require("./message");
+
+const BOT_GH_ID = "good-day-bot"
+const FILE_PATH = "good-day.csv"
 
 const key = process.env.GH_API_KEY;
 if (typeof key === "undefined") {
@@ -35,12 +37,11 @@ const getContent = async function (owner, repo, path) {
   }
 };
 
-const writeToFile = async function (user, payload) {
+const writeToFile = async function (user, data) {
   console.log("user", user);
 
   const owner = user.ghuser || "githubocto";
   const repo = user.ghrepo || "good-day-demo";
-  const path = "good-day.csv";
 
   // if (Array.isArray(body.payload)) {
   //   throw new Error(
@@ -48,17 +49,10 @@ const writeToFile = async function (user, payload) {
   //   )
   // }
 
-  // check if user pressed a button and not just dropdowns
-  const isSubmitButton = isButtonSubmit(payload);
-
-  if (!isSubmitButton) {
-    return { body: "Not a button submit", status: 200 };
-  }
-
   // get content of good-day.csv
   let file;
   try {
-    file = await getContent(owner, repo, path);
+    file = await getContent(owner, repo, FILE_PATH);
   } catch (err) {
     return { body: err.message, status: err.status };
   }
@@ -66,10 +60,10 @@ const writeToFile = async function (user, payload) {
   let parsedPayload;
   if (file) {
     // if file already exists we don't want to write headers
-    parsedPayload = parseSlackResponse(payload);
+    parsedPayload = data.body
   } else {
     // if a new file we want to write headeres to the file
-    parsedPayload = parseSlackResponse(payload, true);
+    parsedPayload = data.header + "\n" + data.body
   }
 
   let fileProps =
@@ -119,14 +113,54 @@ const acceptRepoInvitation = async function (invitationId) {
   }
 };
 
-const getRepoInvitations = async function () {
+const getRepoInvitations = async function (ghuser, ghrepo) {
+  const fullName = `${ghuser}/${ghrepo}`
+
   const response = await octokit.rest.repos.listInvitationsForAuthenticatedUser();
   const data = response.data;
 
-  for (const invite of data) {
+  const invite = response.data.find((inv) => { 
+    return inv.repository.full_name == fullName
+  })
+
+  if (invite) {
     await acceptRepoInvitation(invite.id);
-    console.log("Accepted invite: ", invite.id);
   }
 };
 
-module.exports = { writeToFile, getRepoInvitations };
+const isBotInRepo = async function(owner, repo) {
+  try {
+    const file = await getContent(owner, repo, FILE_PATH);
+
+    if (file) {
+      return true
+    }
+  } catch (err) {
+    return false
+  }
+
+  return false
+}
+
+const isBotWriterInRepo = async function(owner, repo) {
+  try {
+    const response = await octokit.rest.repos.listCollaborators({
+      owner,
+      repo,
+    });
+
+    const collab = response.data.find((entry) => { 
+      return entry.login == BOT_GH_ID
+    })
+
+    if (collab) {
+      return true
+    }
+  } catch (e) {
+    return false
+  }
+
+  return false
+}
+
+module.exports = { writeToFile, getRepoInvitations, isBotInRepo, isBotWriterInRepo };
