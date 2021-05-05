@@ -276,13 +276,6 @@ export const createChartsForUser = async (user: User) => {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: 'Welcome to Good Day! There are just a few steps to get set up.',
-      },
-    },
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
         text: 'Check it out on GitHub',
       },
       accessory: {

@@ -9,7 +9,7 @@ import { getHomeBlocks, saveUser } from './onboarding';
 import { getUser } from './user';
 import { slaxios } from './api';
 import { createChartsForUser } from './chart';
-import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse } from './message';
+import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse, getChannelId } from './message';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
 
@@ -98,7 +98,7 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req, res
         promptTime: newPromptTime,
       });
 
-      await promptUser(user.channelid);
+      // await promptUser(user.channelid);
       // await createChartsForUser(user);
       break;
     }
@@ -119,6 +119,15 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req, res
       }
       break;
     }
+    case 'trigger_prompt': {
+      const channelId = await getChannelId(user.slackid);
+      if (channelId) await promptUser(channelId);
+      break;
+    }
+    case 'trigger_report': {
+      await createChartsForUser(user);
+      break;
+    }
     default: {
       // no action
     }
@@ -134,12 +143,10 @@ app.post('/notify', async (req, res) => {
   }
 
   try {
-    const slackRes = await slaxios.post('/conversations.open', {
-      users: req.body.user_id,
-    });
+    const channelId = await getChannelId(req.body.user_id);
 
-    if (slackRes.data.channel.id) {
-      await promptUser(slackRes.data.channel.id);
+    if (channelId) {
+      await promptUser(channelId);
     }
 
     res.status(200).send(req.body.user_id);
