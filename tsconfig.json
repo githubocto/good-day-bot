@@ -3,7 +3,7 @@
     "module": "commonjs",
     "target": "es6",
     "moduleResolution": "node",
-    "outDir": "../dist",
+    "outDir": "./dist",
     "esModuleInterop": true,
     "noImplicitAny": false,
     "noEmitOnError": true,
@@ -16,4 +16,5 @@
     "experimentalDecorators": true
   },
   "include": ["./**/*.ts"],
+  "exclude": ["node_modules"]
 }
