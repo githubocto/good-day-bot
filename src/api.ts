@@ -1,6 +1,6 @@
-import axios from "axios"
+import axios from 'axios';
 
-const apiUrl = "https://slack.com/api";
+const apiUrl = 'https://slack.com/api';
 
 export const slaxios = axios.create({
   baseURL: apiUrl,

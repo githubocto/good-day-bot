@@ -1,9 +1,8 @@
-import  { pool } from "./database"
-import { slaxios } from "./api"
+import { pool } from './database';
 
-export const getUser = async (slackUserId: any) => {
+export const getUser = async (slackUserId: any): Promise<any> => {
   if (!slackUserId) {
-    return;
+    return null;
   }
 
   const findUserSql = `SELECT * FROM users where slackid='${slackUserId}' LIMIT 1`;

@@ -1,35 +1,33 @@
-import { Octokit } from "@octokit/rest"
+import { Octokit } from '@octokit/rest';
 
-const BOT_GH_ID = "good-day-bot"
-const FILE_PATH = "good-day.csv"
+const BOT_GH_ID = 'good-day-bot';
+const FILE_PATH = 'good-day.csv';
 
 const key = process.env.GH_API_KEY;
-if (typeof key === "undefined") {
-  throw new Error(`need a valid github API key`);
+if (typeof key === 'undefined') {
+  throw new Error('need a valid github API key');
 }
 const octokit = new Octokit({
   auth: key,
 });
 
-export const getContent = async function (owner: string, repo: string, path: string) {
+export const getContent = async (owner: string, repo: string, path: string) => {
   try {
-    let response = await octokit.repos.getContent({
+    const response = await octokit.repos.getContent({
       owner,
       repo,
       path,
     });
 
-    const data = response.data;
+    const { data } = response;
 
     if (Array.isArray(data)) {
-      throw new Error(
-        `path "${path}" returned an array, maybe it's a directory and not a CSV?`
-      );
+      throw new Error(`path "${path}" returned an array, maybe it's a directory and not a CSV?`);
     }
 
-    const sha = data.sha;
-    const content = "content" in data ? data.content : "";
-    const contentBuffer = Buffer.from(content, "base64").toString("utf8");
+    const { sha } = data;
+    const content = 'content' in data ? data.content : '';
+    const contentBuffer = Buffer.from(content, 'base64').toString('utf8');
 
     return { content: contentBuffer, sha };
   } catch (error) {
@@ -37,9 +35,9 @@ export const getContent = async function (owner: string, repo: string, path: str
   }
 };
 
-export const writeToFile = async function (user: any, data: any) {
-  const owner = user.ghuser || "githubocto";
-  const repo = user.ghrepo || "good-day-demo";
+export const writeToFile = async (user: any, data: any) => {
+  const owner = user.ghuser || 'githubocto';
+  const repo = user.ghrepo || 'good-day-demo';
 
   // get content of good-day.csv
   // TODO: for some reason this is returning stale data
@@ -53,34 +51,32 @@ export const writeToFile = async function (user: any, data: any) {
   let parsedPayload;
   if (file) {
     // if file already exists we don't want to write headers
-    parsedPayload = data.body
+    parsedPayload = data.body;
   } else {
     // if a new file we want to write headeres to the file
-    parsedPayload = data.header + "\n" + data.body
+    parsedPayload = `${data.header}\n${data.body}`;
   }
 
-  let fileProps =
+  const fileProps =
     file === null
       ? {
-          content: Buffer.from(parsedPayload + "\n").toString("base64"),
-        }
+        content: Buffer.from(`${parsedPayload}\n`).toString('base64'),
+      }
       : {
-          content: Buffer.from(file.content + "\n" + parsedPayload).toString(
-            "base64"
-          ),
-          sha: file.sha,
-        };
+        content: Buffer.from(`${file.content}\n${parsedPayload}`).toString('base64'),
+        sha: file.sha,
+      };
 
-  console.log(FILE_PATH)
-  console.log(owner, repo)
-  console.log(data)
-  console.log(fileProps)
+  console.log(FILE_PATH);
+  console.log(owner, repo);
+  console.log(data);
+  console.log(fileProps);
   try {
-    const { data } = await octokit.repos.createOrUpdateFileContents({
+    await octokit.repos.createOrUpdateFileContents({
       owner,
       repo,
       path: FILE_PATH,
-      message: "Good Day update",
+      message: 'Good Day update',
       ...fileProps,
       // committer: {
       //   name: `Good Day Bot`,
@@ -91,72 +87,64 @@ export const writeToFile = async function (user: any, data: any) {
       //   email: "your-email",
       // },
     });
+    return { body: 'Wrote to file', status: 200 };
   } catch (err) {
-    console.log(err.message)
+    console.log(err.message);
     return { body: err.message, status: err.status };
   }
-
-  return;
 };
 
-export const acceptRepoInvitation = async function (invitationId: any) {
+export const acceptRepoInvitation = async (invitationId: any) => {
   const response = await octokit.rest.repos.acceptInvitation({
     invitation_id: invitationId,
   });
 
   if (!(response.status === 204)) {
-    throw new Error(
-      `problem accepting the repository invite, status code ${response.status}`
-    );
+    throw new Error(`problem accepting the repository invite, status code ${response.status}`);
   }
 };
 
-export const getRepoInvitations = async function (ghuser: string, ghrepo: string) {
-  const fullName = `${ghuser}/${ghrepo}`
+export const getRepoInvitations = async (ghuser: string, ghrepo: string) => {
+  const fullName = `${ghuser}/${ghrepo}`;
 
   const response = await octokit.rest.repos.listInvitationsForAuthenticatedUser();
-  const data = response.data;
 
-  const invite = response.data.find((inv) => { 
-    return inv.repository.full_name == fullName
-  })
+  const invite = response.data.find((inv) => inv.repository.full_name == fullName);
 
   if (invite) {
     await acceptRepoInvitation(invite.id);
   }
 };
 
-export const isBotInRepo = async function(owner: string, repo: string) {
+export const isBotInRepo = async (owner: string, repo: string) => {
   try {
     const file = await getContent(owner, repo, FILE_PATH);
 
     if (file) {
-      return true
+      return true;
     }
   } catch (err) {
-    return false
+    return false;
   }
 
-  return false
-}
+  return false;
+};
 
-export const isBotWriterInRepo = async function(owner: string, repo: string) {
+export const isBotWriterInRepo = async (owner: string, repo: string) => {
   try {
     const response = await octokit.rest.repos.listCollaborators({
       owner,
       repo,
     });
 
-    const collab = response.data.find((entry) => { 
-      return entry.login == BOT_GH_ID
-    })
+    const collab = response.data.find((entry) => entry.login == BOT_GH_ID);
 
     if (collab) {
-      return true
+      return true;
     }
   } catch (e) {
-    return false
+    return false;
   }
 
-  return false
-}
+  return false;
+};
