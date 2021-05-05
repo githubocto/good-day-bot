@@ -5,8 +5,9 @@ import { Chart } from 'chart.js';
 import * as d3 from 'd3';
 import { Octokit } from '@octokit/rest';
 import { getDataFromDataFileContents } from './github';
-import { questions, sendImageToSlack } from './message';
+import { getChannelId, questions, sendImageToSlack } from './message';
 import { FormResponse, FormResponseField, User } from './types';
+import { slaxios } from './api';
 
 const key = process.env.GH_API_KEY;
 if (typeof key === 'undefined') {
@@ -259,5 +260,51 @@ export const createChartsForUser = async (user: User) => {
 
   const images = await createCharts(data.slice(0, 7));
   await saveImageToRepo(images, user);
+
+  const link = `https://github.com/${user.ghuser}/${user.ghrepo}`;
+  const blocks = [
+    {
+      type: 'header',
+      block_id: 'text',
+      text: {
+        type: 'plain_text',
+        text: 'Your weekly summary is ready!',
+        emoji: true,
+      },
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: 'Welcome to Good Day! There are just a few steps to get set up.',
+      },
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: 'Check it out on GitHub',
+      },
+      accessory: {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: 'Check it out',
+          emoji: true,
+        },
+        value: 'click_me_123',
+        url: link,
+        action_id: 'button-action',
+      },
+    },
+  ];
+
+  const channelId = await getChannelId(user.slackid);
+
+  await slaxios.post('chat.postMessage', {
+    channel: channelId,
+    blocks,
+  });
+
   await sendImageToSlack(`/tmp/${images[0].filename}`, images[0].filename, 'Summary for week', user);
 };

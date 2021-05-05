@@ -222,11 +222,14 @@ const getWritePermissionBlock = (repoUrl = '') => [
   },
 ];
 
-export const sendImageToSlack = async (imagePath: string, imageName: string, imageTitle: string, user: User) => {
+export const getChannelId = async (userId: string) => {
   const slackRes = await slaxios.post('/conversations.open', {
-    users: user.slackid,
+    users: userId,
   });
-  const channelId = slackRes.data.channel.id;
+  return slackRes.data.channel.id;
+};
+export const sendImageToSlack = async (imagePath: string, imageName: string, imageTitle: string, user: User) => {
+  const channelId = await getChannelId(user.slackid);
   if (!channelId) {
     console.log('Channel not found for user ', user.slackid);
     return;
