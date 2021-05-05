@@ -5,14 +5,9 @@ import * as d3 from 'd3';
 import { Octokit } from '@octokit/rest';
 import { getDataFromDataFileContents } from './github';
 import { sendImageToSlack } from './message';
-
-// the plan!
-// 1. get the data from GitHub (auth as the bot?)
-// 2. save the charts in an img/ folder and add them to the readme
-// 3. save the charts as base64 strings and pass to Slack for Home page
+import { FormResponse, FormResponseField } from './types';
 
 const key = process.env.GH_API_KEY;
-
 if (typeof key === 'undefined') {
   throw new Error('need a valid github API key');
 }
@@ -35,19 +30,16 @@ const getDataForUser = async (user: any = {}) => {
   const res = response.data;
   const content = 'content' in res ? res.content : '';
 
-  const data = await getDataFromDataFileContents(content);
+  const data = (await getDataFromDataFileContents(content)) as FormResponse[];
 
   return data;
 };
 
-const generateTimeline = async (data) => {
+const generateTimelineForField = async (data: FormResponse[], field: FormResponseField) => {
   const width = 1200;
   const height = 350;
 
-  const [date, ...fields] = Object.keys(data[0]).filter(Boolean);
-
   const startDate = new Date(data[0].date);
-  const field = fields[0];
 
   const config = {
     type: 'line',
@@ -125,6 +117,15 @@ const generateTimeline = async (data) => {
   });
 
   return imageData;
+};
+
+const generateTimeOfDayChart = async (data: FormResponse[]) => {};
+
+const createCharts = async (data: FormResponse[]) => {
+  const [date, ...fields] = Object.keys(data[0]).filter(Boolean);
+  const fieldTimelines = fields.map((field) => generateTimelineForField(data, field));
+  const timeOfDayChart = generateTimeOfDayChart(data);
+  return fieldTimelines.join('');
 };
 
 const saveImageToRepo = async (imageData: string, user: any = {}) => {
@@ -207,7 +208,7 @@ const getImageBlock = (text: string, url: string) => [
 export const createChartsForUser = async (user: any = {}) => {
   const data = await getDataForUser(user);
 
-  const timelineImageData = await generateTimeline(data);
+  const timelineImageData = await createCharts(data);
   if (!timelineImageData) {
     console.log('No data found for ', user.slackid);
     return;

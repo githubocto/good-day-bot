@@ -3,6 +3,7 @@ import { EmojiConvertor } from 'emoji-js';
 import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
+import * as d3 from 'd3';
 import { slaxios } from './api';
 import { getRepoInvitations, isBotInRepo, isBotWriterInRepo } from './github';
 
@@ -10,7 +11,7 @@ import { getRepoInvitations, isBotInRepo, isBotWriterInRepo } from './github';
 const emoji = new EmojiConvertor.EmojiConvertor();
 emoji.replace_mode = 'unified';
 
-const questions = [
+export const questions = [
   {
     title: ':thinking_face: *How was your workday?*',
     id: 'workday_quality',
@@ -333,7 +334,7 @@ const promptUserSetupCorrectly = async (user: any) => {
 };
 
 export const promptUser = async (channelId: any) => {
-  const date = new Date();
+  const date = d3.timeDay.offset(new Date(), -1);
   const dateString = date.toLocaleDateString();
   const dateFormattedString = date.toDateString();
 
