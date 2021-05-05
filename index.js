@@ -78,14 +78,18 @@ app.post("/interactive", express.urlencoded({ extended: true }), async (req, res
         promptTime: newPromptTime,
       });
 
-      promptCheckRepo(user)
+      // await promptCheckRepo(user) // TODO: change to whatever the appropriate trigger should be
+      await promptUser(user.channelid)
       break;
     case 'check-repo':
       checkRepo(user)
       break;
     case 'record_day':
+      console.log("record day")
+      // console.log
       const data = await parseSlackResponse(payload)
       const error = await writeToFile(user || {}, data);
+      console.log(error)
 
       if (error) {
         res.sendStatus(error.status);
