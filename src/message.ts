@@ -1,5 +1,8 @@
 /* eslint-disable max-len */
 import { EmojiConvertor } from 'emoji-js';
+import FormData from 'form-data';
+import fs from 'fs';
+import path from 'path';
 import { slaxios } from './api';
 import { getRepoInvitations, isBotInRepo, isBotWriterInRepo } from './github';
 
@@ -382,4 +385,39 @@ export const parseSlackResponse = (payload: any) => {
   });
 
   return data;
+};
+
+export const getImage = async (fileName: string) => {
+  const res = await fs.createReadStream(fileName);
+  console.log('image data', res);
+};
+
+const dirPath = path.join(__dirname, '../assets/');
+getImage(`${dirPath}invite-permission.png`);
+
+export const sendImageToSlack = async (imageData: string, imageName: string, user: any = {}) => {
+  const slackRes = await slaxios.post('/conversations.open', {
+    users: user.slackid,
+  });
+  const channelId = slackRes.data.channel.id;
+  if (!channelId) {
+    console.log('Channel not found for user ', user.slackid);
+    return;
+  }
+
+  const form = new FormData();
+  form.append('title', 'Good Day summary II');
+  form.append('filename', imageName);
+  form.append('filetype', 'auto');
+  form.append('channels', channelId);
+  form.append('file', fs.createReadStream('/tmp/chart.png'));
+
+  try {
+    // console.log(form, form);
+    const res = await slaxios.post('files.upload', form, {
+      headers: form.getHeaders(),
+    });
+  } catch (e) {
+    console.log(e);
+  }
 };

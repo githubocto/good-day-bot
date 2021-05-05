@@ -1,12 +1,10 @@
 import fs from 'fs';
-import FormData from 'form-data';
 import { createCanvas } from 'canvas';
 import { Chart } from 'chart.js';
 import * as d3 from 'd3';
 import { Octokit } from '@octokit/rest';
-import { slaxios } from './api';
 import { getDataFromDataFileContents } from './github';
-import { updateHome } from './index';
+import { sendImageToSlack } from './message';
 
 // the plan!
 // 1. get the data from GitHub (auth as the bot?)
@@ -206,61 +204,6 @@ const getImageBlock = (text: string, url: string) => [
   },
 ];
 
-const sendImageToSlack = async (imageData: string, user: any = {}) => {
-  // we need the files.write scope if we want to go this route
-
-  const slackRes = await slaxios.post('/conversations.open', {
-    users: user.slackid,
-  });
-  const channelId = slackRes.data.channel.id;
-  if (!channelId) {
-    console.log('Channel not found for user ', user.slackid);
-    return;
-  }
-
-  const filename = 'good-day-summary.png';
-
-  const form = new FormData();
-  // form.append('file', fs.createReadStream('/tmp/chart.png'), 'temp.png');
-  form.append('title', 'Good Day summary II');
-  form.append('filename', filename);
-  form.append('filetype', 'auto');
-  form.append('channels', channelId);
-  // form.append('file', imageData);
-  form.append('file', fs.createReadStream('/tmp/chart.png'));
-  // form.append('file', fs.createReadStream(imageData));
-  // console.log(imageData);
-
-  try {
-    console.log(form, form);
-    const res = await slaxios.post('files.upload', form, {
-      headers: form.getHeaders(),
-    });
-    const link = res.data.file.permalink_public;
-    const [teamId, fileId, pubSecret] = res.data.file.permalink_public.split('/').slice(-1)[0].split('-');
-    const publicLink = `https://files.slack.com/files-pri/${teamId}-${fileId}/${filename}?pub_secret=${pubSecret}`;
-    console.log(link, publicLink);
-
-    // console.log('id', res.data.file.id);
-    const res2 = await slaxios.post('views.sharedPublicURL', {
-      file: res.data.file.id,
-    });
-
-    // console.log('res', res.data.file);
-    console.log('res2', res2.data);
-    // console.log('form data', res.data.file);
-    // console.log('link', link);
-    // console.log(res.data.form);
-    // const blocks = getHomeBlocks();
-    const blocks = getImageBlock('Success!', publicLink);
-    // console.log(blocks);
-    // console.log(user.slackid, blocks);
-    await updateHome(user.slackid, blocks);
-  } catch (e) {
-    console.log(e);
-  }
-};
-
 export const createChartsForUser = async (user: any = {}) => {
   const data = await getDataForUser(user);
 
@@ -271,5 +214,5 @@ export const createChartsForUser = async (user: any = {}) => {
   }
   console.log('timelineImageData', timelineImageData.slice(0, 20));
   await saveImageToRepo(timelineImageData, user);
-  await sendImageToSlack(timelineImageData, user);
+  await sendImageToSlack(timelineImageData, 'good-day-summary.png', user);
 };
