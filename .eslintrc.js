@@ -22,7 +22,7 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off', // revisit
     '@typescript-eslint/no-explicit-any': 'off', // revisit
     'no-restricted-syntax': 'off', // revisit
-    'eqeqeq': 'off', // revisit
+    eqeqeq: 'off', // revisit
     '@typescript-eslint/ban-ts-comment': 'off',
     'no-console': 'off',
     'implicit-arrow-linebreak': 'off',
