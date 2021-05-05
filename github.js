@@ -38,21 +38,15 @@ const getContent = async function (owner, repo, path) {
 };
 
 const writeToFile = async function (user, data) {
-  console.log("user", user);
-
   const owner = user.ghuser || "githubocto";
   const repo = user.ghrepo || "good-day-demo";
 
-  // if (Array.isArray(body.payload)) {
-  //   throw new Error(
-  //     `malformed payload`
-  //   )
-  // }
-
   // get content of good-day.csv
+  // TODO: for some reason this is returning stale data
   let file;
   try {
     file = await getContent(owner, repo, FILE_PATH);
+    console.log("file found")
   } catch (err) {
     return { body: err.message, status: err.status };
   }
@@ -78,11 +72,15 @@ const writeToFile = async function (user, data) {
           sha: file.sha,
         };
 
+  console.log(FILE_PATH)
+  console.log(owner, repo)
+  console.log(data)
+  console.log(fileProps)
   try {
     const { data } = await octokit.repos.createOrUpdateFileContents({
       owner,
       repo,
-      path,
+      FILE_PATH,
       message: "Good Day update",
       ...fileProps,
       // committer: {
@@ -95,6 +93,7 @@ const writeToFile = async function (user, data) {
       // },
     });
   } catch (err) {
+    console.log(err.message)
     return { body: err.message, status: err.status };
   }
 

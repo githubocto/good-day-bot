@@ -18,7 +18,7 @@ const app = express();
 
 app.use("/slack/events", slackEvents.requestListener());
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 const port = process.env.NODE_ENV === "development" ? 3000 : process.env.PORT;
 
@@ -45,7 +45,7 @@ app.get("/", async (req, res) => {
   res.send("beep boop");
 });
 
-app.post("/interactive", async (req, res) => {
+app.post("/interactive", express.urlencoded({ extended: true }), async (req, res) => {
   const payload = JSON.parse(req.body.payload);
   const slackUserId = payload.user.id;
 
@@ -78,14 +78,18 @@ app.post("/interactive", async (req, res) => {
         promptTime: newPromptTime,
       });
 
-      promptCheckRepo(user)
+      // await promptCheckRepo(user) // TODO: change to whatever the appropriate trigger should be
+      await promptUser(user.channelid)
       break;
     case 'check-repo':
       checkRepo(user)
       break;
     case 'record_day':
+      console.log("record day")
+      // console.log
       const data = await parseSlackResponse(payload)
       const error = await writeToFile(user || {}, data);
+      console.log(error)
 
       if (error) {
         res.sendStatus(error.status);
@@ -135,8 +139,21 @@ const updateHome = async ({ slackUserId, blocks }) => {
 app.post("/notify", async (req, res) => {
   if (!req.body.user_id) {
     res.status(400).send("You must provide a User ID");
+    return;
   }
 
-  // TODO: logic for publishing new view!
-  // do something with req.body.user_id
+  try {
+    const slackRes = await slaxios.post(`/conversations.open`, {
+      users: req.body.user_id,
+    });
+
+    if (slackRes.data.channel.id) {
+      await promptUser(slackRes.data.channel.id);
+    }
+
+    res.status(200).send(req.body.user_id);
+    return;
+  } catch (e) {
+    console.error("Failed to open conversation for user", req.body.user_id);
+  }
 });
