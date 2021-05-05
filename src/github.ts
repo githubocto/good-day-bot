@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest';
+import * as d3 from 'd3';
 
 const BOT_GH_ID = 'good-day-bot';
 const FILE_PATH = 'good-day.csv';
@@ -25,14 +26,18 @@ export const getContent = async (owner: string, repo: string, path: string) => {
       throw new Error(`path "${path}" returned an array, maybe it's a directory and not a CSV?`);
     }
 
-    const { sha } = data;
-    const content = 'content' in data ? data.content : '';
-    const contentBuffer = Buffer.from(content, 'base64').toString('utf8');
-
-    return { content: contentBuffer, sha };
+    return data;
   } catch (error) {
     return null;
   }
+};
+
+export const getDataFromDataFileContents = async (content) => {
+  console.log('content', content);
+  if (!content) return [];
+  const contentBuffer = Buffer.from(content, 'base64').toString('utf8');
+  const data = d3.csvParse(contentBuffer);
+  return data;
 };
 
 export const writeToFile = async (user: any, data: any) => {
@@ -48,29 +53,17 @@ export const writeToFile = async (user: any, data: any) => {
     return { body: err.message, status: err.status };
   }
 
-  let parsedPayload;
-  if (file) {
-    // if file already exists we don't want to write headers
-    parsedPayload = data.body;
-  } else {
-    // if a new file we want to write headeres to the file
-    parsedPayload = `${data.header}\n${data.body}`;
-  }
+  const existingData = await getDataFromDataFileContents(file?.content);
+  const newData = [...existingData.filter((d: any) => d.date !== data.date), data].sort(
+    // @ts-ignore
+    (a, b) => new Date(a.date) - new Date(b.date),
+  );
 
-  const fileProps =
-    file === null
-      ? {
-        content: Buffer.from(`${parsedPayload}\n`).toString('base64'),
-      }
-      : {
-        content: Buffer.from(`${file.content}\n${parsedPayload}`).toString('base64'),
-        sha: file.sha,
-      };
+  const header = Object.keys(newData[0]).join(',');
+  const values = newData.map((o: any) => Object.values(o).join(',')).join('\n');
+  const csvString = `${header}\n${values}`;
 
-  console.log(FILE_PATH);
-  console.log(owner, repo);
-  console.log(data);
-  console.log(fileProps);
+  const fileProps = { content: Buffer.from(`${csvString}\n`).toString('base64'), sha: file?.sha };
   try {
     await octokit.repos.createOrUpdateFileContents({
       owner,

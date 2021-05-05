@@ -4,6 +4,7 @@ import { Chart } from 'chart.js';
 import * as d3 from 'd3';
 import { Octokit } from '@octokit/rest';
 import { slaxios } from './api';
+import { getDataFromDataFileContents } from './github';
 
 // the plan!
 // 1. get the data from GitHub (auth as the bot?)
@@ -21,7 +22,6 @@ const octokit = new Octokit({
 });
 
 const getDataForUser = async (user: any = {}) => {
-  console.log('user', user);
   const owner = user.ghuser || 'githubocto';
   const repo = user.ghrepo || 'good-day-demo';
   const path = 'good-day.csv';
@@ -34,8 +34,8 @@ const getDataForUser = async (user: any = {}) => {
 
   const res = response.data;
   const content = 'content' in res ? res.content : '';
-  const contentBuffer = Buffer.from(content, 'base64').toString('utf8');
-  const data = d3.csvParse(contentBuffer);
+
+  const data = await getDataFromDataFileContents(content);
 
   return data;
 };

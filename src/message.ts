@@ -363,40 +363,23 @@ export const checkRepo = async (user: any) => {
 
 // TODO: Create a type for our payload once we decide on parameters
 export const parseSlackResponse = (payload: any) => {
-  // const options = slackOptions(payload);
   const { blocks } = payload.message;
   const date = blocks[0].block_id;
   const state = payload.state.values;
-  // console.log("state", state);
 
-  let parsedResponseHeader = 'date,';
-  let parsedResponseBody = `${date},`;
   const states = Object.values(state);
-  for (const val of states) {
-    // @ts-ignore
-    const userSelectedOptionId = Object.keys(val)[0];
+  const data = { date };
+  states.forEach((stateData: any) => {
+    const fieldId = Object.keys(stateData)[0];
+    const question = questions.find((o) => o.id === fieldId);
+    let questionText = question.title;
+    questionText = emoji.replace_colons(questionText);
+    questionText = questionText.replace(/,/g, '');
+    const value = stateData[fieldId].selected_option?.value; // selected option number
+    let option = question.options[value] || 'N/A';
+    option = emoji.replace_colons(option);
+    data[questionText] = option;
+  });
 
-    // @ts-ignore
-    const userSelectedOption = val[userSelectedOptionId].selected_option?.value
-      ? // @ts-ignore
-      val[userSelectedOptionId].selected_option.value
-      : ''; // a string number
-
-    const question = questions.find((o) => o.id === userSelectedOptionId);
-    // @ts-ignore
-    const optionText = question.options[parseInt(userSelectedOption, 10)] || 'N/A';
-
-    parsedResponseHeader += `${userSelectedOptionId},`;
-    parsedResponseBody += `${optionText},`;
-  }
-
-  // convert shortcode emojis to unicode
-  parsedResponseBody = emoji.replace_colons(parsedResponseBody);
-
-  return { header: parsedResponseHeader, body: parsedResponseBody };
-  // if (newFile) {
-  //   return parsedResponseHeader + "\n" + parsedResponseBody;
-  // }
-
-  // return parsedResponseBody;
+  return data;
 };
