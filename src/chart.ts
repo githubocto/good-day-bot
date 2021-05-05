@@ -214,5 +214,5 @@ export const createChartsForUser = async (user: any = {}) => {
   }
   console.log('timelineImageData', timelineImageData.slice(0, 20));
   await saveImageToRepo(timelineImageData, user);
-  await sendImageToSlack(timelineImageData, 'good-day-summary.png', user);
+  await sendImageToSlack(timelineImageData, 'good-day-summary.png', 'Good Day Summary II', user);
 };

@@ -216,7 +216,7 @@ const getWritePermissionBlock = (repoUrl = '') => [
   },
 ];
 
-export const sendImageToSlack = async (imagePath: string, imageName: string, user: any = {}) => {
+export const sendImageToSlack = async (imagePath: string, imageName: string, imageTitle: string, user: any = {}) => {
   const slackRes = await slaxios.post('/conversations.open', {
     users: user.slackid,
   });
@@ -227,7 +227,7 @@ export const sendImageToSlack = async (imagePath: string, imageName: string, use
   }
 
   const form = new FormData();
-  form.append('title', 'Good Day summary II');
+  form.append('title', imageTitle);
   form.append('filename', imageName);
   form.append('filetype', 'auto');
   form.append('channels', channelId);
@@ -254,6 +254,8 @@ const getAddBotBlock = (repoUrl = '') => [
 ];
 
 export const promptCheckRepo = async (user: any) => {
+  await getRepoInvitations(user.ghuser, user.ghrepo); // accept available ivnitiations
+
   const args = {
     // user_id: slackUserId,
     channel: user.channelid,
@@ -281,7 +283,7 @@ const promptUserForAddingBot = async (user: any) => {
     const res = await slaxios.post('chat.postMessage', args);
 
     const dirPath = path.join(__dirname, '../assets/');
-    await sendImageToSlack(`${dirPath}invite-permission.png`, 'add-user.png', user);
+    await sendImageToSlack(`${dirPath}invite-permission.png`, 'add-user.png', 'Add good-day-bot to your repo', user);
 
     promptCheckRepo(user);
   } catch (e) {
@@ -304,7 +306,7 @@ const promptUserForWritePermissions = async (user: any) => {
     const res = await slaxios.post('chat.postMessage', args);
 
     const dirPath = path.join(__dirname, '../assets/');
-    await sendImageToSlack(`${dirPath}write-permission.png`, 'add-user.png', user);
+    await sendImageToSlack(`${dirPath}write-permission.png`, 'add-user.png', 'Enable write premissions', user);
 
     promptCheckRepo(user);
   } catch (e) {

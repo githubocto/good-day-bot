@@ -88,6 +88,7 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req, res
 
       const newBlocks = getHomeBlocks({ repo: wholeRepoString, timezone: '', isSaved: 'true' });
       await updateHome(slackUserId, newBlocks);
+      await promptCheckRepo(user);
       break;
     }
     case 'onboarding-timepicker-action': {
@@ -97,9 +98,8 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req, res
         promptTime: newPromptTime,
       });
 
-      // await promptCheckRepo(user); // TODO: change to whatever the appropriate trigger should be
-      // await promptUser(user.channelid);
-      await createChartsForUser(user);
+      await promptUser(user.channelid);
+      // await createChartsForUser(user);
       break;
     }
     case 'check-repo': {
