@@ -34,7 +34,6 @@ export const getContent = async (owner: string, repo: string, path: string) => {
 };
 
 export const getDataFromDataFileContents = async (content) => {
-  console.log('content', content);
   if (!content) return [];
   const contentBuffer = Buffer.from(content, 'base64').toString('utf8');
   const data = d3.csvParse(contentBuffer);

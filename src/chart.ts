@@ -1,10 +1,11 @@
 import fs from 'fs';
-import { createCanvas } from 'canvas';
+import http from 'http';
+import { Canvas, createCanvas, loadImage } from 'canvas';
 import { Chart } from 'chart.js';
 import * as d3 from 'd3';
 import { Octokit } from '@octokit/rest';
 import { getDataFromDataFileContents } from './github';
-import { sendImageToSlack } from './message';
+import { questions, sendImageToSlack } from './message';
 import { FormResponse, FormResponseField, User } from './types';
 
 const key = process.env.GH_API_KEY;
@@ -15,6 +16,10 @@ if (typeof key === 'undefined') {
 const octokit = new Octokit({
   auth: key,
 });
+type Image = {
+  filename: string;
+  image: string;
+};
 
 const getDataForUser = async (user: User) => {
   const owner = user.ghuser || 'githubocto';
@@ -35,11 +40,18 @@ const getDataForUser = async (user: User) => {
   return data;
 };
 
-const generateTimelineForField = async (data: FormResponse[], field: FormResponseField) => {
-  const width = 1200;
-  const height = 350;
+const timelineWidth = 1200;
+const timelineHeight = 350;
+const generateTimelineForField = async (data: FormResponse[], field: FormResponseField, index: number) => {
+  const width = timelineWidth;
+  const height = timelineHeight;
 
   const startDate = new Date(data[0].date);
+
+  const question = questions.find((q) => q.titleWithEmoji === field);
+  if (question === undefined) return;
+
+  const { optionsWithEmoji: options } = question;
 
   const config = {
     type: 'line',
@@ -52,7 +64,11 @@ const generateTimelineForField = async (data: FormResponse[], field: FormRespons
           backgroundColor: 'rgba(69, 174, 177, 0.1)',
           pointBackgroundColor: 'rgba(69, 174, 177, 1)',
           pointRadius: 5,
-          data: data.map((d) => +d[field]),
+          data: data.map((d) => {
+            const optionIndex = options.indexOf(d[field]);
+            if (optionIndex === -1) return undefined;
+            return optionIndex;
+          }),
         },
       ],
     },
@@ -80,8 +96,11 @@ const generateTimelineForField = async (data: FormResponse[], field: FormRespons
       scales: {
         y: {
           min: 0,
-          max: 5,
+          max: options.length,
           stepSize: 1,
+          ticks: {
+            callback: (value) => options[value],
+          },
         },
       },
     },
@@ -112,8 +131,9 @@ const generateTimelineForField = async (data: FormResponse[], field: FormRespons
   let imageData = canvas.toDataURL('image/png');
   imageData = imageData.replace(/^data:image\/\w+;base64,/, '');
 
-  await fs.writeFile('/tmp/chart.png', imageData, { encoding: 'base64' }, (e) => {
-    console.log(e);
+  const filename = `/tmp/timeline-${index}.png`;
+  await fs.writeFile(filename, imageData, { encoding: 'base64' }, (e) => {
+    // console.log(e);
   });
 
   return imageData;
@@ -121,55 +141,79 @@ const generateTimelineForField = async (data: FormResponse[], field: FormRespons
 
 const generateTimeOfDayChart = async (data: FormResponse[]) => {};
 
+// const getImageData = (filename: string) =>
+//   new Promise((resolve) => loadImage(filename).then((image) => resolve(image)));
+
+// const mergeImagesVertically = async (images: string[]) => {
+//   const canvas = createCanvas(timelineWidth, timelineHeight * images.length);
+//   const ctx = canvas.getContext('2d');
+//   let imageIndex = 0;
+//   for (const image of images) {
+//     console.log('image', image);
+//     const imageData = await getImageData(image);
+//     console.log('imageData', imageData);
+//     ctx.drawImage(imageData, 0, imageIndex * timelineHeight);
+//     imageIndex++;
+//   }
+//   let imageData = canvas.toDataURL('image/png');
+//   imageData = imageData.replace(/^data:image\/\w+;base64,/, '');
+//   return imageData;
+// };
+
 const createCharts = async (data: FormResponse[]) => {
   const [date, ...fields] = Object.keys(data[0]).filter(Boolean);
-  const fieldTimelines = fields.map((field) => generateTimelineForField(data, field));
+  const fieldTimelinesPromises = fields.map((field, i) => generateTimelineForField(data, field, i));
+  const fieldTimelines = await Promise.all(fieldTimelinesPromises);
   const timeOfDayChart = generateTimeOfDayChart(data);
-  return fieldTimelines.join('');
+
+  return [...fieldTimelines.filter(Boolean).map((timeline, i) => ({ image: timeline, filename: `timeline-${i}.png` }))];
 };
 
-const saveImageToRepo = async (imageData: string, user: User) => {
+const getSha = async (filename: string, user: User) => {
   const owner = user.ghuser || 'githubocto';
   const repo = user.ghrepo || 'good-day-demo';
-  const imagePath = 'timeline.png';
+  try {
+    const res = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: filename,
+    });
+    // @ts-ignore
+    return res?.data?.sha;
+  } catch (e) {
+    return undefined;
+  }
+};
+const saveImageToRepo = async (images: Image[], user: User) => {
+  const owner = user.ghuser || 'githubocto';
+  const repo = user.ghrepo || 'good-day-demo';
 
-  const fileContents = await octokit.repos.getContent({
-    owner,
-    repo,
-    path: imagePath,
-  });
+  for (const image of images) {
+    // @ts-ignore
+    const sha = await getSha(`/${image.filename}`, user);
 
-  // @ts-ignore
-  const sha = fileContents?.data?.sha;
+    const response = await octokit.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path: image.filename,
+      sha,
+      content: image.image,
+      message: 'Update summary visualization',
+      'committer.name': 'Good Day Bot',
+      'committer.email': 'octo-devex+goodday@github.com',
+      'author.name': 'Good Day Bot',
+      'author.email': 'octo-devex+goodday@github.com',
+    });
+  }
 
-  const response = await octokit.repos.createOrUpdateFileContents({
-    owner,
-    repo,
-    path: imagePath,
-    sha,
-    content: imageData,
-    message: 'Update summary visualization',
-    'committer.name': 'Good Day Bot',
-    'committer.email': 'octo-devex+goodday@github.com',
-    'author.name': 'Good Day Bot',
-    'author.email': 'octo-devex+goodday@github.com',
-  });
-
-  const readmeFile = await octokit.repos.getContent({
-    owner,
-    repo,
-    path: 'README.md',
-  });
-
-  // @ts-ignore
-  const readmeSha = readmeFile?.data?.sha;
+  const readmeSha = await getSha('/README.md', user);
 
   const readmeContents = `
   # Good Day
 
-  Latest summary
+  ## Latest summary
 
-  ![Good Day](./timeline.png)
+  ${images.map(({ filename }) => `![Image](${filename})`).join('\n')}
   `;
 
   const readmeContentsBuffer = Buffer.from(readmeContents);
@@ -208,12 +252,12 @@ const getImageBlock = (text: string, url: string) => [
 export const createChartsForUser = async (user: User) => {
   const data = await getDataForUser(user);
 
-  const timelineImageData = await createCharts(data);
-  if (!timelineImageData) {
+  if (!data || !data.length) {
     console.log('No data found for ', user.slackid);
     return;
   }
-  console.log('timelineImageData', timelineImageData.slice(0, 20));
-  await saveImageToRepo(timelineImageData, user);
-  await sendImageToSlack(timelineImageData, 'good-day-summary.png', 'Good Day Summary II', user);
+
+  const images = await createCharts(data.slice(0, 7));
+  await saveImageToRepo(images, user);
+  await sendImageToSlack(`/tmp/${images[0].filename}`, images[0].filename, 'Summary for week', user);
 };

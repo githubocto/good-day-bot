@@ -14,7 +14,7 @@ emoji.replace_mode = 'unified';
 
 export const questions = [
   {
-    title: ':thinking_face: *How was your workday?*',
+    title: ':thinking_face: How was your workday?',
     id: 'workday_quality',
     placeholder: 'My workday was…',
     options: [
@@ -70,7 +70,7 @@ export const questions = [
   {
     id: 'meetings',
     title: ':speaking_head_in_silhouette: How many meetings did you have today?',
-    placeholder: 'plain_text',
+    placeholder: 'How many?',
     options: ['None', '1', '2', '3–4', '5 or more'],
   },
   {
@@ -114,7 +114,11 @@ export const questions = [
       ':date: Equally throughout the day',
     ],
   },
-];
+].map((d) => ({
+  ...d,
+  titleWithEmoji: emoji.replace_colons(d.title),
+  optionsWithEmoji: d.options.map((option) => emoji.replace_colons(option)),
+}));
 
 const messageBlocks = [
   {
