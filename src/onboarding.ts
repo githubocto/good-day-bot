@@ -156,17 +156,47 @@ export const getHomeBlocks = ({ repo, timezone, isSaved } = { repo: '', timezone
     },
     ...(isSaved
       ? [
+          {
+            type: 'divider',
+          },
+          {
+            type: 'header',
+            text: {
+              type: 'plain_text',
+              text: '👏 All set! Looking forward to catching up soon!',
+              emoji: true,
+            },
+          },
+        ]
+      : []),
+    {
+      type: 'actions',
+      elements: [
         {
-          type: 'divider',
-        },
-        {
-          type: 'header',
+          type: 'button',
           text: {
             type: 'plain_text',
-            text: '👏 All set! Looking forward to catching up soon!',
+            text: 'Trigger prompt',
             emoji: true,
           },
+          value: 'trigger_prompt',
+          action_id: 'trigger_prompt',
         },
-      ]
-      : []),
+      ],
+    },
+    {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'Trigger report',
+            emoji: true,
+          },
+          value: 'trigger_report',
+          action_id: 'trigger_report',
+        },
+      ],
+    },
   ].filter(Boolean);
