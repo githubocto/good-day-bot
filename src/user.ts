@@ -1,4 +1,5 @@
 import { pool } from './database';
+import { User } from './types';
 
 export const getUser = async (slackUserId: any): Promise<any> => {
   if (!slackUserId) {
@@ -9,5 +10,5 @@ export const getUser = async (slackUserId: any): Promise<any> => {
 
   const { rows: users } = await pool.query(findUserSql);
 
-  return users[0];
+  return users[0] as User;
 };

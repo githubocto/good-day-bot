@@ -6,6 +6,7 @@ import path from 'path';
 import * as d3 from 'd3';
 import { slaxios } from './api';
 import { getRepoInvitations, isBotInRepo, isBotWriterInRepo } from './github';
+import { User } from './types';
 
 // Slack convertes emojis to shortcode. We need to convert back to unicode
 const emoji = new EmojiConvertor.EmojiConvertor();
@@ -217,7 +218,7 @@ const getWritePermissionBlock = (repoUrl = '') => [
   },
 ];
 
-export const sendImageToSlack = async (imagePath: string, imageName: string, imageTitle: string, user: any = {}) => {
+export const sendImageToSlack = async (imagePath: string, imageName: string, imageTitle: string, user: User) => {
   const slackRes = await slaxios.post('/conversations.open', {
     users: user.slackid,
   });
@@ -254,7 +255,7 @@ const getAddBotBlock = (repoUrl = '') => [
   },
 ];
 
-export const promptCheckRepo = async (user: any) => {
+export const promptCheckRepo = async (user: User) => {
   await getRepoInvitations(user.ghuser, user.ghrepo); // accept available ivnitiations
 
   const args = {
@@ -269,7 +270,7 @@ export const promptCheckRepo = async (user: any) => {
   }
 };
 
-const promptUserForAddingBot = async (user: any) => {
+const promptUserForAddingBot = async (user: User) => {
   const { ghuser } = user;
   const { ghrepo } = user;
 
@@ -292,7 +293,7 @@ const promptUserForAddingBot = async (user: any) => {
   }
 };
 
-const promptUserForWritePermissions = async (user: any) => {
+const promptUserForWritePermissions = async (user: User) => {
   const { ghuser } = user;
   const { ghrepo } = user;
 
@@ -315,7 +316,7 @@ const promptUserForWritePermissions = async (user: any) => {
   }
 };
 
-const promptUserSetupCorrectly = async (user: any) => {
+const promptUserSetupCorrectly = async (user: User) => {
   const { ghuser } = user;
   const { ghrepo } = user;
 
@@ -333,7 +334,7 @@ const promptUserSetupCorrectly = async (user: any) => {
   }
 };
 
-export const promptUser = async (channelId: any) => {
+export const promptUser = async (channelId: string) => {
   const date = d3.timeDay.offset(new Date(), -1);
   const dateString = date.toLocaleDateString();
   const dateFormattedString = date.toDateString();
@@ -364,7 +365,7 @@ export const promptUser = async (channelId: any) => {
   }
 };
 
-export const checkRepo = async (user: any) => {
+export const checkRepo = async (user: User) => {
   console.log('check repo');
   // console.log(user)
   const { ghuser } = user;

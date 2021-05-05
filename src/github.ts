@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import * as d3 from 'd3';
+import { FormResponse, User } from './types';
 
 const BOT_GH_ID = 'good-day-bot';
 const FILE_PATH = 'good-day.csv';
@@ -40,7 +41,7 @@ export const getDataFromDataFileContents = async (content) => {
   return data;
 };
 
-export const writeToFile = async (user: any, data: any) => {
+export const writeToFile = async (user: User, data: FormResponse) => {
   const owner = user.ghuser || 'githubocto';
   const repo = user.ghrepo || 'good-day-demo';
 

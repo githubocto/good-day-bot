@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 import { Octokit } from '@octokit/rest';
 import { getDataFromDataFileContents } from './github';
 import { sendImageToSlack } from './message';
-import { FormResponse, FormResponseField } from './types';
+import { FormResponse, FormResponseField, User } from './types';
 
 const key = process.env.GH_API_KEY;
 if (typeof key === 'undefined') {
@@ -16,7 +16,7 @@ const octokit = new Octokit({
   auth: key,
 });
 
-const getDataForUser = async (user: any = {}) => {
+const getDataForUser = async (user: User) => {
   const owner = user.ghuser || 'githubocto';
   const repo = user.ghrepo || 'good-day-demo';
   const path = 'good-day.csv';
@@ -128,7 +128,7 @@ const createCharts = async (data: FormResponse[]) => {
   return fieldTimelines.join('');
 };
 
-const saveImageToRepo = async (imageData: string, user: any = {}) => {
+const saveImageToRepo = async (imageData: string, user: User) => {
   const owner = user.ghuser || 'githubocto';
   const repo = user.ghrepo || 'good-day-demo';
   const imagePath = 'timeline.png';
@@ -205,7 +205,7 @@ const getImageBlock = (text: string, url: string) => [
   },
 ];
 
-export const createChartsForUser = async (user: any = {}) => {
+export const createChartsForUser = async (user: User) => {
   const data = await getDataForUser(user);
 
   const timelineImageData = await createCharts(data);
