@@ -137,9 +137,11 @@ const generateTimelineForField = async (data: FormResponse[], field: FormRespons
     // console.log(e);
   });
 
+  // eslint-disable-next-line consistent-return
   return imageData;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 const generateTimeOfDayChart = async (data: FormResponse[]) => {};
 
 // const getImageData = (filename: string) =>

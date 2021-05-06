@@ -33,7 +33,7 @@ export const getContent = async (owner: string, repo: string, path: string) => {
   }
 };
 
-export const getDataFromDataFileContents = async (content) => {
+export const getDataFromDataFileContents = async (content: string) => {
   if (!content) return [];
   const contentBuffer = Buffer.from(content, 'base64').toString('utf8');
   const data = d3.csvParse(contentBuffer);
@@ -87,7 +87,7 @@ export const writeToFile = async (user: User, data: FormResponse) => {
   }
 };
 
-export const acceptRepoInvitation = async (invitationId: any) => {
+export const acceptRepoInvitation = async (invitationId: number) => {
   const response = await octokit.rest.repos.acceptInvitation({
     invitation_id: invitationId,
   });
@@ -110,20 +110,6 @@ export const getRepoInvitations = async (ghuser: string, ghrepo: string) => {
 };
 
 export const isBotInRepo = async (owner: string, repo: string) => {
-  try {
-    const file = await getContent(owner, repo, FILE_PATH);
-
-    if (file) {
-      return true;
-    }
-  } catch (err) {
-    return false;
-  }
-
-  return false;
-};
-
-export const isBotWriterInRepo = async (owner: string, repo: string) => {
   try {
     const response = await octokit.rest.repos.listCollaborators({
       owner,

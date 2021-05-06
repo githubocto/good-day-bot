@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import * as d3 from 'd3';
 import { slaxios } from './api';
-import { getRepoInvitations, isBotInRepo, isBotWriterInRepo } from './github';
+import { getRepoInvitations, isBotInRepo } from './github';
 import { User } from './types';
 
 // Slack convertes emojis to shortcode. We need to convert back to unicode
@@ -252,12 +252,12 @@ export const sendImageToSlack = async (imagePath: string, imageName: string, ima
   }
 };
 
-const getAddBotBlock = (repoUrl = '') => [
+const getPermissionsBlock = (repoUrl = '') => [
   {
     type: 'section',
     text: {
       type: 'mrkdwn',
-      text: `Make sure to add the \`good-day-bot\` as a collaborator with *write* permissions to your repo. Go to <${repoUrl}|${repoUrl}> to do that.`,
+      text: `Make sure to add the \`good-day-bot\` as a collaborator to your repo (and if given an option with *write* permissions). Go to <${repoUrl}|${repoUrl}> to do that.`,
     },
   },
 ];
@@ -277,7 +277,7 @@ export const promptCheckRepo = async (user: User) => {
   }
 };
 
-const promptUserForAddingBot = async (user: User) => {
+const promptUserForPermissions = async (user: User) => {
   const { ghuser } = user;
   const { ghrepo } = user;
 
@@ -285,7 +285,7 @@ const promptUserForAddingBot = async (user: User) => {
   const args = {
     // user_id: slackUserId,
     channel: user.channelid,
-    blocks: getAddBotBlock(repoUrl),
+    blocks: getPermissionsBlock(repoUrl),
   };
 
   try {
@@ -293,29 +293,7 @@ const promptUserForAddingBot = async (user: User) => {
 
     const dirPath = path.join(__dirname, '../assets/');
     await sendImageToSlack(`${dirPath}invite-permission.png`, 'add-user.png', 'Add good-day-bot to your repo', user);
-
-    promptCheckRepo(user);
-  } catch (e) {
-    console.error(e);
-  }
-};
-
-const promptUserForWritePermissions = async (user: User) => {
-  const { ghuser } = user;
-  const { ghrepo } = user;
-
-  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`;
-  const args = {
-    // user_id: slackUserId,
-    channel: user.channelid,
-    blocks: getWritePermissionBlock(repoUrl),
-  };
-
-  try {
-    const res = await slaxios.post('chat.postMessage', args);
-
-    const dirPath = path.join(__dirname, '../assets/');
-    await sendImageToSlack(`${dirPath}write-permission.png`, 'add-user.png', 'Enable write premissions', user);
+    await sendImageToSlack(`${dirPath}write-permission.png`, 'add-user.png', 'Enable write premissions (if given the option)', user);
 
     promptCheckRepo(user);
   } catch (e) {
@@ -381,14 +359,9 @@ export const checkRepo = async (user: User) => {
   await getRepoInvitations(ghuser, ghrepo);
 
   const isInRepo = await isBotInRepo(ghuser, ghrepo);
+  console.log('is writer in repo', isInRepo);
   if (!isInRepo) {
-    await promptUserForAddingBot(user);
-    return;
-  }
-
-  const isWriterInRepo = await isBotWriterInRepo(ghuser, ghrepo);
-  if (!isWriterInRepo) {
-    await promptUserForWritePermissions(user);
+    await promptUserForPermissions(user);
     return;
   }
 
