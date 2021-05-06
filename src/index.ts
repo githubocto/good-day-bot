@@ -13,9 +13,9 @@ import {
   promptCheckRepo,
   parseSlackResponse,
   getChannelId,
-  promptUserFormSubmission,
-  promptUserTimeChange,
-  promptUserForm,
+  messageUserTimeChange,
+  messageUserQuestionsForm,
+  messageUserFormSuccessful,
 } from './message';
 import { User } from './types';
 
@@ -94,13 +94,17 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
 
 /* Slack interactive messages */
 
+// Docs: https://slack.dev/node-slack-sdk/interactive-messages
+// Docs: https://www.npmjs.com/package/@slack/interactive-messages
+
 const getUserFromPayload = async (payload: any) => {
   const slackUserId = payload.user.id;
   const user: User = await getUser(slackUserId);
   return user;
 };
 
-slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (payload, respond) => {
+slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (payload) => {
+  console.log('select timepicker');
   const slackUserId = payload.user.id;
   const user = await getUser(slackUserId);
   const newPromptTime = payload.actions[0].selected_time;
@@ -110,25 +114,25 @@ slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (pa
     promptTime: newPromptTime,
   });
 
-  await promptUserTimeChange(user, newPromptTime);
+  await messageUserTimeChange(user, newPromptTime);
 });
 
-slackInteractions.action({ actionId: 'check-repo' }, async (payload, respond) => {
+slackInteractions.action({ actionId: 'check-repo' }, async (payload) => {
   const user = await getUserFromPayload(payload);
   checkRepo(user);
 });
 
-slackInteractions.action({ actionId: 'trigger_prompt' }, async (payload, respond) => {
+slackInteractions.action({ actionId: 'trigger_prompt' }, async (payload) => {
   const user = await getUserFromPayload(payload);
-  await promptUserForm(user.channelid);
+  await messageUserQuestionsForm(user.channelid);
 });
 
-slackInteractions.action({ actionId: 'trigger_report' }, async (payload, respond) => {
+slackInteractions.action({ actionId: 'trigger_report' }, async (payload) => {
   const user = await getUserFromPayload(payload);
   await notifyUserOfSummary(user);
 });
 
-slackInteractions.action({ actionId: 'record_day' }, async (payload, respond) => {
+slackInteractions.action({ actionId: 'record_day' }, async (payload) => {
   console.log('record day');
   const user = await getUserFromPayload(payload);
   const { blocks } = payload.message;
@@ -142,13 +146,13 @@ slackInteractions.action({ actionId: 'record_day' }, async (payload, respond) =>
     return;
   }
 
-  await promptUserFormSubmission(user);
+  await messageUserFormSuccessful(user);
 });
 
 // Everything else we don't catch above like a dropdown menu select on the user form
 // Important to have anyway so app registers a 200 status code when that happens
 // If not user sees a warning in Slack
-slackInteractions.action({}, (payload, respond) => {
+slackInteractions.action({}, (payload) => {
   // console.log('Form drowndown select');
 });
 
@@ -168,7 +172,7 @@ app.post('/notify', async (req: Request, res: Response) => {
     const channelId = await getChannelId(req.body.user_id);
 
     if (channelId) {
-      await promptUserForm(channelId);
+      await messageUserQuestionsForm(channelId);
     }
 
     res.status(200).send(req.body.user_id);
