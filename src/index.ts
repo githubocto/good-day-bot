@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import { createEventAdapter } from '@slack/events-api';
-// import { createMessageAdapter } from '@slack/interactive-messages';
+import { createMessageAdapter } from '@slack/interactive-messages';
 import { writeToFile } from './github';
 import { getHomeBlocks, saveUser } from './onboarding';
 import { getUser } from './user';
@@ -17,16 +17,17 @@ import {
   promptUserTimeChange,
   promptUserForm,
 } from './message';
+import { User } from './types';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
 
-// Initialize
 const slackEvents = createEventAdapter(slackSigningSecret);
-// const slackInteractions = createMessageAdapter(slackSigningSecret); // we could replace slack endpoint with this
+const slackInteractions = createMessageAdapter(slackSigningSecret); // we could replace slack endpoint with this
 
 const app = express();
 
 app.use('/slack/events', slackEvents.requestListener());
+app.use('/interactive', slackInteractions.requestListener());
 
 app.use(express.json());
 
@@ -35,6 +36,8 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Express running on port ${port} in ${app.settings.env} mode`);
 });
+
+/* Slack events */
 
 export const updateHome = async (slackUserId: string, blocks: any) => {
   const args = {
@@ -66,87 +69,93 @@ slackEvents.on('app_home_opened', async (event) => {
   await updateHome(slackUserId, blocks);
 });
 
-app.get('/', async (req, res) => {
-  res.send('beep boop');
-});
-
-// types: https://github.com/slackapi/bolt-js/blob/main/src/types/actions/block-action.ts
-app.post('/interactive', express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
-  const payload = JSON.parse(req.body.payload);
-  const slackUserId = payload.user.id;
-
-  const user = await getUser(slackUserId);
-
-  const actionId = payload.actions[0].action_id;
-
-  switch (actionId) {
-    case 'onboarding-github-repo': {
-      const repo = payload.actions[0].value;
-      const wholeRepoString = repo.split('github.com/')[1] || '';
-      const [owner, name] = wholeRepoString.split('/');
-      if (!owner || !name) {
-        return res.status(400).send('Invalid repo URL');
-      }
-
-      saveUser({
-        slackUserId,
-        repoOwner: owner,
-        repoName: name,
-      });
-
-      const newBlocks = getHomeBlocks({ repo: wholeRepoString, timezone: '', isSaved: 'true' });
-      await updateHome(slackUserId, newBlocks);
-      await promptCheckRepo(user);
-      break;
-    }
-    case 'onboarding-timepicker-action': {
-      const newPromptTime = payload.actions[0].selected_time;
-      await saveUser({
-        slackUserId,
-        promptTime: newPromptTime,
-      });
-
-      await promptUserTimeChange(user, newPromptTime);
-      break;
-    }
-    case 'check-repo': {
-      checkRepo(user);
-      break;
-    }
-    case 'record_day': {
-      console.log('record day');
-      const { blocks } = payload.message;
-      const date = blocks[0].block_id;
-      const state = payload.state.values;
-
-      const data = await parseSlackResponse(date, state);
-      const error = await writeToFile(user || {}, data);
-
-      if (error.status !== 200) {
-        res.sendStatus(error.status);
-        return null;
-      }
-
-      await promptUserFormSubmission(user);
-
-      break;
-    }
-    case 'trigger_prompt': {
-      const channelId = await getChannelId(user.slackid);
-      if (channelId) await promptUserForm(channelId);
-      break;
-    }
-    case 'trigger_report': {
-      await notifyUserOfSummary(user);
-      console.log(user);
-      break;
-    }
-    default: {
-      // no action
-    }
+slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload, respond) => {
+  const repo = payload.actions[0].value;
+  const wholeRepoString = repo.split('github.com/')[1] || '';
+  const [owner, name] = wholeRepoString.split('/');
+  if (!owner || !name) {
+    await respond({ text: 'Invalid repo UR.' }); // TODO: send a message if invalid repo
+    return;
   }
 
-  return res.sendStatus(200);
+  const slackUserId = payload.user.id;
+  const user = await getUser(slackUserId);
+
+  saveUser({
+    slackUserId,
+    repoOwner: owner,
+    repoName: name,
+  });
+
+  const newBlocks = getHomeBlocks({ repo: wholeRepoString, timezone: '', isSaved: 'true' });
+  await updateHome(slackUserId, newBlocks);
+  await promptCheckRepo(user);
+});
+
+/* Slack interactive messages */
+
+const getUserFromPayload = async (payload: any) => {
+  const slackUserId = payload.user.id;
+  const user: User = await getUser(slackUserId);
+  return user;
+};
+
+slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (payload, respond) => {
+  const slackUserId = payload.user.id;
+  const user = await getUser(slackUserId);
+  const newPromptTime = payload.actions[0].selected_time;
+
+  await saveUser({
+    slackUserId,
+    promptTime: newPromptTime,
+  });
+
+  await promptUserTimeChange(user, newPromptTime);
+});
+
+slackInteractions.action({ actionId: 'check-repo' }, async (payload, respond) => {
+  const user = await getUserFromPayload(payload);
+  checkRepo(user);
+});
+
+slackInteractions.action({ actionId: 'trigger_prompt' }, async (payload, respond) => {
+  const user = await getUserFromPayload(payload);
+  await promptUserForm(user.channelid);
+});
+
+slackInteractions.action({ actionId: 'trigger_report' }, async (payload, respond) => {
+  const user = await getUserFromPayload(payload);
+  await notifyUserOfSummary(user);
+});
+
+slackInteractions.action({ actionId: 'record_day' }, async (payload, respond) => {
+  console.log('record day');
+  const user = await getUserFromPayload(payload);
+  const { blocks } = payload.message;
+  const date = blocks[0].block_id;
+  const state = payload.state.values;
+
+  const data = await parseSlackResponse(date, state);
+  const error = await writeToFile(user, data);
+
+  if (error.status !== 200) {
+    return;
+  }
+
+  await promptUserFormSubmission(user);
+});
+
+// Everything else we don't catch above like a dropdown menu select on the user form
+// Important to have anyway so app registers a 200 status code when that happens
+// If not user sees a warning in Slack
+slackInteractions.action({}, (payload, respond) => {
+  // console.log('Form drowndown select');
+});
+
+/* Server endpoints */
+
+app.get('/', async (req, res) => {
+  res.send('beep boop');
 });
 
 app.post('/notify', async (req: Request, res: Response) => {
