@@ -8,7 +8,7 @@ import { getUser } from './user';
 import { slaxios } from './api';
 import { createChartsForUser } from './chart';
 // eslint-disable-next-line max-len
-import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse, getChannelId, promptUserFormSubmission } from './message';
+import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse, getChannelId, promptUserFormSubmission, promptUserTimeChange } from './message';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
 
@@ -93,13 +93,12 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req: Req
     }
     case 'onboarding-timepicker-action': {
       const newPromptTime = payload.actions[0].selected_time;
-      saveUser({
+      await saveUser({
         slackUserId,
         promptTime: newPromptTime,
       });
 
-      // await promptUser(user.channelid);
-      // await createChartsForUser(user);
+      await promptUserTimeChange(user, newPromptTime);
       break;
     }
     case 'check-repo': {

@@ -221,12 +221,27 @@ const formSubmittedBlock = [
   },
 ];
 
+const getSuccessfullNewTimeBlock = (time: any) => {
+  const block = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `You've changed your daily time to: ${time}.`,
+      },
+    },
+  ];
+
+  return block;
+};
+
 export const getChannelId = async (userId: string) => {
   const slackRes = await slaxios.post('/conversations.open', {
     users: userId,
   });
   return slackRes.data.channel.id;
 };
+
 export const sendImageToSlack = async (imagePath: string, imageName: string, imageTitle: string, user: User) => {
   const channelId = await getChannelId(user.slackid);
   if (!channelId) {
@@ -262,11 +277,13 @@ const getPermissionsBlock = (repoUrl = '') => [
 ];
 
 export const promptCheckRepo = async (user: User) => {
+  const channelId = await getChannelId(user.slackid);
+
   await getRepoInvitations(user.ghuser, user.ghrepo); // accept available ivnitiations
 
   const args = {
     // user_id: slackUserId,
-    channel: user.channelid,
+    channel: channelId,
     blocks: repoCheckBlock,
   };
   try {
@@ -277,13 +294,14 @@ export const promptCheckRepo = async (user: User) => {
 };
 
 const promptUserForPermissions = async (user: User) => {
+  const channelId = await getChannelId(user.slackid);
   const { ghuser } = user;
   const { ghrepo } = user;
 
   const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`;
   const args = {
     // user_id: slackUserId,
-    channel: user.channelid,
+    channel: channelId,
     blocks: getPermissionsBlock(repoUrl),
   };
 
@@ -301,10 +319,28 @@ const promptUserForPermissions = async (user: User) => {
 };
 
 const promptUserSetupCorrectly = async (user: User) => {
+  const channelId = await getChannelId(user.slackid);
+
   const args = {
     // user_id: slackUserId,
-    channel: user.channelid,
+    channel: channelId,
     blocks: addedSuccessfullyBlock,
+  };
+
+  try {
+    await slaxios.post('chat.postMessage', args);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const promptUserTimeChange = async (user: User, time: any) => {
+  const channelId = await getChannelId(user.slackid);
+
+  const args = {
+    // user_id: slackUserId,
+    channel: channelId,
+    blocks: getSuccessfullNewTimeBlock(time),
   };
 
   try {
@@ -346,9 +382,11 @@ export const promptUser = async (channelId: string) => {
 };
 
 export const promptUserFormSubmission = async (user: User) => {
+  const channelId = await getChannelId(user.slackid);
+
   const args = {
     // user_id: slackUserId,
-    channel: user.channelid,
+    channel: channelId,
     blocks: formSubmittedBlock,
   };
 
