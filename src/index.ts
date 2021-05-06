@@ -1,20 +1,20 @@
 import 'dotenv/config';
-import express from 'express';
-
-// const express = require("express");
+import express, { Request, Response } from 'express';
 import { createEventAdapter } from '@slack/events-api';
-
+// import { createMessageAdapter } from '@slack/interactive-messages';
 import { writeToFile } from './github';
 import { getHomeBlocks, saveUser } from './onboarding';
 import { getUser } from './user';
 import { slaxios } from './api';
 import { createChartsForUser } from './chart';
-import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse, getChannelId } from './message';
+// eslint-disable-next-line max-len
+import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse, getChannelId, promptUserFormSubmission } from './message';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
 
 // Initialize
 const slackEvents = createEventAdapter(slackSigningSecret);
+// const slackInteractions = createMessageAdapter(slackSigningSecret); // we could replace slack endpoint with this
 
 const app = express();
 
@@ -63,7 +63,8 @@ app.get('/', async (req, res) => {
   res.send('beep boop');
 });
 
-app.post('/interactive', express.urlencoded({ extended: true }), async (req, res) => {
+// types: https://github.com/slackapi/bolt-js/blob/main/src/types/actions/block-action.ts
+app.post('/interactive', express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
   const payload = JSON.parse(req.body.payload);
   const slackUserId = payload.user.id;
 
@@ -108,15 +109,20 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req, res
     }
     case 'record_day': {
       console.log('record day');
-      // console.log
-      const data = await parseSlackResponse(payload);
-      const error = await writeToFile(user || {}, data);
-      console.log(error);
+      const { blocks } = payload.message;
+      const date = blocks[0].block_id;
+      const state = payload.state.values;
 
-      if (error) {
+      const data = await parseSlackResponse(date, state);
+      const error = await writeToFile(user || {}, data);
+
+      if (error.status !== 200) {
         res.sendStatus(error.status);
         return null;
       }
+
+      await promptUserFormSubmission(user);
+
       break;
     }
     case 'trigger_prompt': {
@@ -136,7 +142,7 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req, res
   return res.sendStatus(200);
 });
 
-app.post('/notify', async (req, res) => {
+app.post('/notify', async (req: Request, res: Response) => {
   if (!req.body.user_id) {
     res.status(400).send('You must provide a User ID');
     return;

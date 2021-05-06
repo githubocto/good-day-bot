@@ -37,6 +37,7 @@
   "dependencies": {
     "@octokit/rest": "^18.5.3",
     "@slack/events-api": "^3.0.0",
+    "@slack/interactive-messages": "^2.0.1",
     "axios": "^0.21.1",
     "canvas": "^2.7.0",
     "chart.js": "^3.2.1",

@@ -3,7 +3,6 @@ import { EmojiConvertor } from 'emoji-js';
 import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
-import * as d3 from 'd3';
 import { slaxios } from './api';
 import { getRepoInvitations, isBotInRepo } from './github';
 import { User } from './types';
@@ -212,12 +211,12 @@ const addedSuccessfullyBlock = [
   },
 ];
 
-const getWritePermissionBlock = (repoUrl = '') => [
+const formSubmittedBlock = [
   {
     type: 'section',
     text: {
       type: 'mrkdwn',
-      text: `Oops, you have to grant the bot *'write'* permission on your repository. Go to <${repoUrl}|${repoUrl}> to change that.`,
+      text: "You're set for today!",
     },
   },
 ];
@@ -350,6 +349,20 @@ export const promptUser = async (channelId: string) => {
   }
 };
 
+export const promptUserFormSubmission = async (user: User) => {
+  const args = {
+    // user_id: slackUserId,
+    channel: user.channelid,
+    blocks: formSubmittedBlock,
+  };
+
+  try {
+    const res = await slaxios.post('chat.postMessage', args);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const checkRepo = async (user: User) => {
   console.log('check repo');
   // console.log(user)
@@ -370,11 +383,7 @@ export const checkRepo = async (user: User) => {
 };
 
 // TODO: Create a type for our payload once we decide on parameters
-export const parseSlackResponse = (payload: any) => {
-  const { blocks } = payload.message;
-  const date = blocks[0].block_id;
-  const state = payload.state.values;
-
+export const parseSlackResponse = (date: any, state: any) => {
   const states = Object.values(state);
   const data = { date };
   states.forEach((stateData: any) => {

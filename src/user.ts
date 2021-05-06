@@ -10,5 +10,7 @@ export const getUser = async (slackUserId: any): Promise<any> => {
 
   const { rows: users } = await pool.query(findUserSql);
 
+  // TOOD: fetch new channel ID return with User object (channels.open)
+
   return users[0] as User;
 };
