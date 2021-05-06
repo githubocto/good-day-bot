@@ -243,7 +243,7 @@ export const sendImageToSlack = async (imagePath: string, imageName: string, ima
 
   try {
     // console.log(form, form);
-    const res = await slaxios.post('files.upload', form, {
+    await slaxios.post('files.upload', form, {
       headers: form.getHeaders(),
     });
   } catch (e) {
@@ -270,7 +270,7 @@ export const promptCheckRepo = async (user: User) => {
     blocks: repoCheckBlock,
   };
   try {
-    const res = await slaxios.post('chat.postMessage', args);
+    await slaxios.post('chat.postMessage', args);
   } catch (e) {
     console.error(e);
   }
@@ -288,7 +288,7 @@ const promptUserForPermissions = async (user: User) => {
   };
 
   try {
-    const res = await slaxios.post('chat.postMessage', args);
+    await slaxios.post('chat.postMessage', args);
 
     const dirPath = path.join(__dirname, '../assets/');
     await sendImageToSlack(`${dirPath}invite-permission.png`, 'add-user.png', 'Add good-day-bot to your repo', user);
@@ -301,10 +301,6 @@ const promptUserForPermissions = async (user: User) => {
 };
 
 const promptUserSetupCorrectly = async (user: User) => {
-  const { ghuser } = user;
-  const { ghrepo } = user;
-
-  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`;
   const args = {
     // user_id: slackUserId,
     channel: user.channelid,
@@ -312,7 +308,7 @@ const promptUserSetupCorrectly = async (user: User) => {
   };
 
   try {
-    const res = await slaxios.post('chat.postMessage', args);
+    await slaxios.post('chat.postMessage', args);
   } catch (e) {
     console.error(e);
   }
@@ -341,7 +337,7 @@ export const promptUser = async (channelId: string) => {
     blocks,
   };
   try {
-    const res = await slaxios.post('chat.postMessage', args);
+    await slaxios.post('chat.postMessage', args);
 
     // console.log("res", res.data);
   } catch (e) {
@@ -357,7 +353,7 @@ export const promptUserFormSubmission = async (user: User) => {
   };
 
   try {
-    const res = await slaxios.post('chat.postMessage', args);
+    await slaxios.post('chat.postMessage', args);
   } catch (e) {
     console.error(e);
   }
