@@ -293,64 +293,63 @@ export const promptCheckRepo = async (user: User) => {
   }
 };
 
-const promptUserForPermissions = async (user: User) => {
-  const channelId = await getChannelId(user.slackid);
-  const { ghuser } = user;
-  const { ghrepo } = user;
-
-  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`;
+export const promptUser = async (channel: string, blocks: any) => {
   const args = {
-    // user_id: slackUserId,
-    channel: channelId,
-    blocks: getPermissionsBlock(repoUrl),
+    channel,
+    blocks,
   };
 
   try {
     await slaxios.post('chat.postMessage', args);
-
-    const dirPath = path.join(__dirname, '../assets/');
-    await sendImageToSlack(`${dirPath}invite-permission.png`, 'add-user.png', 'Add good-day-bot to your repo', user);
-    await sendImageToSlack(`${dirPath}write-permission.png`, 'add-user.png', 'Enable write premissions (if given the option)', user);
-
-    promptCheckRepo(user);
   } catch (e) {
     console.error(e);
   }
+};
+
+const promptUserForPermissions = async (user: User) => {
+  const channelId = await getChannelId(user.slackid);
+  const { ghuser } = user;
+  const { ghrepo } = user;
+  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`;
+
+  await promptUser(channelId, getPermissionsBlock(repoUrl));
+
+  const dirPath = path.join(__dirname, '../assets/');
+  await sendImageToSlack(`${dirPath}invite-permission.png`, 'add-user.png', 'Add good-day-bot to your repo', user);
+  await sendImageToSlack(`${dirPath}write-permission.png`, 'add-user.png', 'Enable write premissions (if given the option)', user);
+
+  promptCheckRepo(user);
 };
 
 const promptUserSetupCorrectly = async (user: User) => {
   const channelId = await getChannelId(user.slackid);
 
-  const args = {
-    // user_id: slackUserId,
-    channel: channelId,
-    blocks: addedSuccessfullyBlock,
-  };
+  await promptUser(channelId, addedSuccessfullyBlock);
+};
 
-  try {
-    await slaxios.post('chat.postMessage', args);
-  } catch (e) {
-    console.error(e);
+export const checkRepo = async (user: User) => {
+  const { ghuser } = user;
+  const { ghrepo } = user;
+
+  await getRepoInvitations(ghuser, ghrepo);
+
+  const isInRepo = await isBotInRepo(ghuser, ghrepo);
+  if (!isInRepo) {
+    await promptUserForPermissions(user);
+    return;
   }
+
+  // tell user they are setup correctly
+  await promptUserSetupCorrectly(user);
 };
 
 export const promptUserTimeChange = async (user: User, time: any) => {
   const channelId = await getChannelId(user.slackid);
 
-  const args = {
-    // user_id: slackUserId,
-    channel: channelId,
-    blocks: getSuccessfullNewTimeBlock(time),
-  };
-
-  try {
-    await slaxios.post('chat.postMessage', args);
-  } catch (e) {
-    console.error(e);
-  }
+  await promptUser(channelId, getSuccessfullNewTimeBlock(time));
 };
 
-export const promptUser = async (channelId: string) => {
+export const promptUserForm = async (channelId: string) => {
   const date = new Date();
   const dateString = date.toLocaleDateString();
   const dateFormattedString = date.toDateString();
@@ -368,52 +367,13 @@ export const promptUser = async (channelId: string) => {
     ...messageBlocks,
   ];
 
-  const args = {
-    channel: channelId,
-    blocks,
-  };
-  try {
-    await slaxios.post('chat.postMessage', args);
-
-    // console.log("res", res.data);
-  } catch (e) {
-    console.error(e);
-  }
+  await promptUser(channelId, blocks);
 };
 
 export const promptUserFormSubmission = async (user: User) => {
   const channelId = await getChannelId(user.slackid);
 
-  const args = {
-    // user_id: slackUserId,
-    channel: channelId,
-    blocks: formSubmittedBlock,
-  };
-
-  try {
-    await slaxios.post('chat.postMessage', args);
-  } catch (e) {
-    console.error(e);
-  }
-};
-
-export const checkRepo = async (user: User) => {
-  console.log('check repo');
-  // console.log(user)
-  const { ghuser } = user;
-  const { ghrepo } = user;
-
-  await getRepoInvitations(ghuser, ghrepo);
-
-  const isInRepo = await isBotInRepo(ghuser, ghrepo);
-  console.log('is writer in repo', isInRepo);
-  if (!isInRepo) {
-    await promptUserForPermissions(user);
-    return;
-  }
-
-  // tell user they are setup correctly
-  await promptUserSetupCorrectly(user);
+  await promptUser(channelId, formSubmittedBlock);
 };
 
 // TODO: Create a type for our payload once we decide on parameters

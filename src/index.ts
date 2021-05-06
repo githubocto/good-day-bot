@@ -9,13 +9,13 @@ import { slaxios } from './api';
 import { notifyUserOfSummary } from './chart';
 // eslint-disable-next-line max-len
 import {
-  promptUser,
   checkRepo,
   promptCheckRepo,
   parseSlackResponse,
   getChannelId,
   promptUserFormSubmission,
   promptUserTimeChange,
+  promptUserForm,
 } from './message';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
@@ -133,7 +133,7 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req: Req
     }
     case 'trigger_prompt': {
       const channelId = await getChannelId(user.slackid);
-      if (channelId) await promptUser(channelId);
+      if (channelId) await promptUserForm(channelId);
       break;
     }
     case 'trigger_report': {
@@ -159,7 +159,7 @@ app.post('/notify', async (req: Request, res: Response) => {
     const channelId = await getChannelId(req.body.user_id);
 
     if (channelId) {
-      await promptUser(channelId);
+      await promptUserForm(channelId);
     }
 
     res.status(200).send(req.body.user_id);
