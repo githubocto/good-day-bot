@@ -6,9 +6,17 @@ import { writeToFile } from './github';
 import { getHomeBlocks, saveUser } from './onboarding';
 import { getUser } from './user';
 import { slaxios } from './api';
-import { createChartsForUser } from './chart';
+import { notifyUserOfSummary } from './chart';
 // eslint-disable-next-line max-len
-import { promptUser, checkRepo, promptCheckRepo, parseSlackResponse, getChannelId, promptUserFormSubmission, promptUserTimeChange } from './message';
+import {
+  promptUser,
+  checkRepo,
+  promptCheckRepo,
+  parseSlackResponse,
+  getChannelId,
+  promptUserFormSubmission,
+  promptUserTimeChange,
+} from './message';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
 
@@ -129,7 +137,8 @@ app.post('/interactive', express.urlencoded({ extended: true }), async (req: Req
       break;
     }
     case 'trigger_report': {
-      await createChartsForUser(user);
+      await notifyUserOfSummary(user);
+      console.log(user);
       break;
     }
     default: {
@@ -152,6 +161,25 @@ app.post('/notify', async (req: Request, res: Response) => {
     if (channelId) {
       await promptUser(channelId);
     }
+
+    res.status(200).send(req.body.user_id);
+    return;
+  } catch (e) {
+    console.error('Failed to open conversation for user', req.body.user_id);
+  }
+});
+
+app.post('/notify-summary', async (req, res) => {
+  if (!req.body.user_id) {
+    res.status(400).send('You must provide a User ID');
+    return;
+  }
+
+  try {
+    const user = await getUser(req.body.user_id);
+    if (!user) throw new Error('User not found');
+
+    await notifyUserOfSummary(user);
 
     res.status(200).send(req.body.user_id);
     return;
