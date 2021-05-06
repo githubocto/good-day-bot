@@ -53,7 +53,6 @@ slackEvents.on('app_home_opened', async (event) => {
   const slackUserId = event.user;
   saveUser({
     slackUserId,
-    channelId: event.channel,
   });
   const blocks = getHomeBlocks();
   await updateHome(slackUserId, blocks);

@@ -1,4 +1,5 @@
 import { pool } from './database';
+import { getChannelId } from './message';
 import { User } from './types';
 
 export const getUser = async (slackUserId: any): Promise<any> => {
@@ -10,7 +11,10 @@ export const getUser = async (slackUserId: any): Promise<any> => {
 
   const { rows: users } = await pool.query(findUserSql);
 
-  // TOOD: fetch new channel ID return with User object (channels.open)
+  const user: User = users[0];
 
-  return users[0] as User;
+  const channelid = await getChannelId(user.slackid);
+  user.channelid = channelid;
+
+  return user;
 };

@@ -3,7 +3,7 @@ import { pool } from './database';
 import { slaxios } from './api';
 
 export const saveUser = async (config: any) => {
-  const { slackUserId, repoOwner, repoName, promptTime, channelId } = config;
+  const { slackUserId, repoOwner, repoName, promptTime } = config;
 
   if (!slackUserId) {
     return;
@@ -30,7 +30,6 @@ export const saveUser = async (config: any) => {
   const metrics = {
     ghrepo: repoName,
     ghuser: repoOwner,
-    channelid: channelId,
     timezone: userDataRes.data.user.tz,
     prompt_time: promptTime,
   };
@@ -156,18 +155,18 @@ export const getHomeBlocks = ({ repo, timezone, isSaved } = { repo: '', timezone
     },
     ...(isSaved
       ? [
-          {
-            type: 'divider',
+        {
+          type: 'divider',
+        },
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: '👏 All set! Looking forward to catching up soon!',
+            emoji: true,
           },
-          {
-            type: 'header',
-            text: {
-              type: 'plain_text',
-              text: '👏 All set! Looking forward to catching up soon!',
-              emoji: true,
-            },
-          },
-        ]
+        },
+      ]
       : []),
     {
       type: 'actions',
