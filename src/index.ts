@@ -2,10 +2,10 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import { createEventAdapter } from '@slack/events-api';
 import { createMessageAdapter } from '@slack/interactive-messages';
+import { Block, HeaderBlock } from '@slack/types';
 import { writeToFile } from './github';
-import { getHomeBlocks, saveUser } from './onboarding';
-import { getUser } from './user';
-import { slaxios } from './api';
+import { getHomeBlocks, updateHome } from './slack-home';
+import { getUser, saveUser } from './user';
 import { notifyUserOfSummary } from './chart';
 // eslint-disable-next-line max-len
 import {
@@ -16,7 +16,7 @@ import {
   messageUserTimeChange,
   messageUserQuestionsForm,
   messageUserFormSuccessful,
-} from './message';
+} from './slack-messages';
 import { User } from './types';
 
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
@@ -39,26 +39,6 @@ app.listen(port, () => {
 
 /* Slack events */
 
-export const updateHome = async (slackUserId: string, blocks: any) => {
-  const args = {
-    user_id: slackUserId,
-    view: {
-      type: 'home',
-      title: {
-        type: 'plain_text',
-        text: 'Keep notes!',
-      },
-      blocks,
-    },
-  };
-  try {
-    const res = await slaxios.post('views.publish', args);
-    console.log(res.data);
-  } catch (e) {
-    console.error(e);
-  }
-};
-
 // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
 slackEvents.on('app_home_opened', async (event) => {
   const slackUserId = event.user;
@@ -68,6 +48,17 @@ slackEvents.on('app_home_opened', async (event) => {
   const blocks = getHomeBlocks();
   await updateHome(slackUserId, blocks);
 });
+
+/* Slack interactive messages */
+
+// Docs: https://slack.dev/node-slack-sdk/interactive-messages
+// Docs: https://www.npmjs.com/package/@slack/interactive-messages
+
+const getUserFromPayload = async (payload: any) => {
+  const slackUserId = payload.user.id;
+  const user: User = await getUser(slackUserId);
+  return user;
+};
 
 slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload, respond) => {
   const repo = payload.actions[0].value;
@@ -92,21 +83,11 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
   await promptCheckRepo(user);
 });
 
-/* Slack interactive messages */
-
-// Docs: https://slack.dev/node-slack-sdk/interactive-messages
-// Docs: https://www.npmjs.com/package/@slack/interactive-messages
-
-const getUserFromPayload = async (payload: any) => {
-  const slackUserId = payload.user.id;
-  const user: User = await getUser(slackUserId);
-  return user;
-};
-
 slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (payload) => {
   console.log('select timepicker');
   const slackUserId = payload.user.id;
   const user = await getUser(slackUserId);
+
   const newPromptTime = payload.actions[0].selected_time;
 
   await saveUser({
@@ -133,10 +114,13 @@ slackInteractions.action({ actionId: 'trigger_report' }, async (payload) => {
 });
 
 slackInteractions.action({ actionId: 'record_day' }, async (payload) => {
-  console.log('record day');
   const user = await getUserFromPayload(payload);
-  const { blocks } = payload.message;
-  const date = blocks[0].block_id;
+
+  const blocks = payload.message.blocks as Block[];
+  const headerBlock = blocks[0] as HeaderBlock;
+  const date = headerBlock.block_id;
+
+  console.log(payload.state);
   const state = payload.state.values;
 
   const data = await parseSlackResponse(date, state);

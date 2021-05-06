@@ -1,4 +1,4 @@
-import { questions } from './message';
+import { questions } from './slack-messages';
 
 const fields = questions.map(({ title }) => title);
 

@@ -35,6 +35,7 @@
     "prettier:fix": "npm run prettier -- --write"
   },
   "dependencies": {
+    "@slack/types": "^2.0.0",
     "@octokit/rest": "^18.5.3",
     "@slack/events-api": "^3.0.0",
     "@slack/interactive-messages": "^2.0.1",

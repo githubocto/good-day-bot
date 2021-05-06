@@ -1,4 +1,4 @@
-import { getChannelId } from './message';
+import { getChannelId } from './slack-messages';
 import { User } from './types';
 import { slaxios } from './api';
 

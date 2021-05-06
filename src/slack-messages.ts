@@ -3,6 +3,7 @@ import { EmojiConvertor } from 'emoji-js';
 import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
+import { Block, KnownBlock, SectionBlock } from '@slack/types';
 import { slaxios } from './api';
 import { getRepoInvitations, isBotInRepo } from './github';
 import { User } from './types';
@@ -20,7 +21,7 @@ export const getChannelId = async (userId: string) => {
   return slackRes.data.channel.id;
 };
 
-export const messageUser = async (channel: string, blocks: any) => {
+export const messageUser = async (channel: string, blocks: (KnownBlock | Block)[]) => {
   const args = {
     channel,
     blocks,
@@ -58,8 +59,8 @@ export const messageUserImage = async (imagePath: string, imageName: string, ima
 
 /* Time changes */
 
-const getTimeChangeBlock = (time: any) => {
-  const block = [
+const getTimeChangeBlock = (time: string) => {
+  const block: SectionBlock[] = [
     {
       type: 'section',
       text: {
@@ -72,7 +73,7 @@ const getTimeChangeBlock = (time: any) => {
   return block;
 };
 
-export const messageUserTimeChange = async (user: User, time: any) => {
+export const messageUserTimeChange = async (user: User, time: string) => {
   const channelId = await getChannelId(user.slackid);
 
   await messageUser(channelId, getTimeChangeBlock(time));
@@ -80,7 +81,7 @@ export const messageUserTimeChange = async (user: User, time: any) => {
 
 /* Check repository for correct permission */
 
-const repoCheckBlock = [
+const repoCheckBlock: SectionBlock[] = [
   {
     type: 'section',
     text: {
@@ -100,17 +101,20 @@ const repoCheckBlock = [
   },
 ];
 
-const getRepoPermissionsBlock = (repoUrl = '') => [
-  {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text: `Make sure to add the \`good-day-bot\` as a collaborator to your repo (and if given an option with *write* permissions). Go to <${repoUrl}|${repoUrl}> to do that.`,
+const getRepoPermissionsBlock = (repoUrl = '') => {
+  const block: SectionBlock[] = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `Make sure to add the \`good-day-bot\` as a collaborator to your repo (and if given an option with *write* permissions). Go to <${repoUrl}|${repoUrl}> to do that.`,
+      },
     },
-  },
-];
+  ];
+  return block;
+};
 
-const repoSuccessfulBlock = [
+const repoSuccessfulBlock: SectionBlock[] = [
   {
     type: 'section',
     text: {
@@ -284,7 +288,7 @@ export const questions = [
   optionsWithEmoji: d.options.map((option) => emoji.replace_colons(option)),
 }));
 
-const messageBlocks = [
+const messageBlocks: (KnownBlock | Block)[] = [
   {
     type: 'section',
     block_id: '/8H',
@@ -347,7 +351,7 @@ const messageBlocks = [
 ];
 
 // TODO: Create a type for our payload once we decide on parameters
-export const parseSlackResponse = (date: any, state: any) => {
+export const parseSlackResponse = (date: string, state: any) => {
   const states = Object.values(state);
   const data = { date };
   states.forEach((stateData: any) => {
@@ -365,7 +369,7 @@ export const parseSlackResponse = (date: any, state: any) => {
   return data;
 };
 
-const formSuccessfulBlock = [
+const formSuccessfulBlock: SectionBlock[] = [
   {
     type: 'section',
     text: {
