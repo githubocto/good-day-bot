@@ -292,16 +292,6 @@ const getFormSuccessfulBlock = () => {
   return block;
 };
 
-// const formSuccessfulBlock: SectionBlock[] = [
-//   {
-//     type: 'section',
-//     text: {
-//       type: 'mrkdwn',
-//       text: formSuccessfulMessages[Math.floor(Math.random() * formSuccessfulMessages.length)],
-//     },
-//   },
-// ];
-
 export const messageUserQuestionsForm = async (channelId: string) => {
   const date = new Date();
   const dateString = date.toLocaleDateString();
