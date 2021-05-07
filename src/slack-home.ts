@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import { Block, KnownBlock } from '@slack/types';
 import { slaxios } from './api';
 import { isBotInRepo } from './github';
@@ -6,17 +5,14 @@ import { User } from './types';
 
 export const getHomeBlocks = async (user: User) => {
   const repo = user ? `${user.ghuser}/${user.ghrepo}` : undefined;
-  console.log('getHomeBlocks');
 
   const isBotSetUp = await isBotInRepo(user.ghuser, user.ghrepo);
-  console.log(user);
-  console.log(isBotSetUp);
   const repoUrl = `https://github.com/${user.ghuser}/${user.ghrepo}`;
   const isSetUp = repo && user.timezone && user.prompt_time && isBotSetUp;
 
   const promptTime = user.prompt_time;
   const [hour] = promptTime.split(':');
-  const friendlyPromptTime = `${+hour % 12}:00 ${+hour > 12 ? 'PM' : 'AM'}`;
+  const friendlyPromptTime = +hour === 12 ? '12:00 PM' : `${+hour % 12}:00 ${+hour >= 12 ? 'PM' : 'AM'}`;
 
   const debugStep = isBotSetUp
     ? [
@@ -258,8 +254,7 @@ export const updateHome = async (slackUserId: string, blocks: (Block | KnownBloc
     },
   };
   try {
-    const res = await slaxios.post('views.publish', args);
-    console.log(res.data);
+    await slaxios.post('views.publish', args);
   } catch (e) {
     console.error(e);
   }
