@@ -11,7 +11,6 @@ import { notifyUserOfSummary } from './chart';
 import {
   parseSlackResponse,
   getChannelId,
-  messageUserTimeChange,
   messageUserQuestionsForm,
   messageUserFormSuccessful,
 } from './slack-messages';
@@ -80,6 +79,7 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
   await getRepoInvitations(user.ghuser, user.ghrepo);
 
   const newBlocks = await getHomeBlocks(user);
+  console.log('newBlocks', newBlocks);
   await updateHome(slackUserId, newBlocks);
 });
 
@@ -98,8 +98,6 @@ slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (pa
 
   const newBlocks = await getHomeBlocks(user);
   await updateHome(slackUserId, newBlocks);
-
-  // await messageUserTimeChange(user, newPromptTime);
 });
 
 slackInteractions.action({ actionId: 'check-repo' }, async (payload) => {

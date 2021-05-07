@@ -6,8 +6,11 @@ import { User } from './types';
 
 export const getHomeBlocks = async (user: User) => {
   const repo = user ? `${user.ghuser}/${user.ghrepo}` : undefined;
+  console.log('getHomeBlocks');
 
   const isBotSetUp = await isBotInRepo(user.ghuser, user.ghrepo);
+  console.log(user);
+  console.log(isBotSetUp);
   const repoUrl = `https://github.com/${user.ghuser}/${user.ghrepo}`;
   const isSetUp = repo && user.timezone && user.prompt_time && isBotSetUp;
 
@@ -113,7 +116,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
         {
           type: 'header',
           text: {
-            type: 'mrkdwn',
+            type: 'plain_text',
             text: `You're all set 🙌! You'll get a message on weekdays at ${friendlyPromptTime} to fill in your Good Day form.`,
             emoji: true,
           },
@@ -249,14 +252,14 @@ export const updateHome = async (slackUserId: string, blocks: (Block | KnownBloc
       type: 'home',
       title: {
         type: 'plain_text',
-        text: 'Keep notes!',
+        text: 'The Good Day Project',
       },
       blocks,
     },
   };
   try {
     const res = await slaxios.post('views.publish', args);
-    // console.log(res.data);
+    console.log(res.data);
   } catch (e) {
     console.error(e);
   }
