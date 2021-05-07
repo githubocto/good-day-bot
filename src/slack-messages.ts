@@ -267,15 +267,40 @@ export const parseSlackResponse = (date: string, state: any) => {
   return data;
 };
 
-const formSuccessfulBlock: SectionBlock[] = [
-  {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text: "You're set for today!",
-    },
-  },
+const formSuccessfulMessages = [
+  'You\'re set for today!',
+  'Saved!',
+  'Thanks for doing that.',
+  'Your Good Day form has been saved.',
+  'Keep it up 🙌',
+  'Hope you have a great day tomorrow.',
 ];
+
+const getFormSuccessfulBlock = () => {
+  const message = formSuccessfulMessages[Math.floor(Math.random() * formSuccessfulMessages.length)];
+  console.log(message);
+  const block: SectionBlock[] = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: message,
+      },
+    },
+  ];
+
+  return block;
+};
+
+// const formSuccessfulBlock: SectionBlock[] = [
+//   {
+//     type: 'section',
+//     text: {
+//       type: 'mrkdwn',
+//       text: formSuccessfulMessages[Math.floor(Math.random() * formSuccessfulMessages.length)],
+//     },
+//   },
+// ];
 
 export const messageUserQuestionsForm = async (channelId: string) => {
   const date = new Date();
@@ -301,5 +326,5 @@ export const messageUserQuestionsForm = async (channelId: string) => {
 export const messageUserFormSuccessful = async (user: User) => {
   const channelId = await getChannelId(user.slackid);
 
-  await messageUser(channelId, formSuccessfulBlock);
+  await messageUser(channelId, getFormSuccessfulBlock());
 };
