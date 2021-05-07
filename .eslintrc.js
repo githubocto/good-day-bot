@@ -17,7 +17,7 @@ module.exports = {
   ignorePatterns: ['node_modules'],
   rules: {
     'import/no-extraneous-dependencies': ['error', { devDependencies: ['**/*.test.ts'] }],
-    'max-len': ['error', 120],
+    'max-len': ['error', 260],
     'import/prefer-default-export': ['off'],
     '@typescript-eslint/explicit-module-boundary-types': 'off', // revisit
     '@typescript-eslint/no-explicit-any': 'off', // revisit

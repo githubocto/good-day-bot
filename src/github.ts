@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import * as d3 from 'd3';
+import { csvParse } from 'd3-dsv';
 import { FormResponse, User } from './types';
 
 const BOT_GH_ID = 'good-day-bot';
@@ -36,7 +36,7 @@ export const getContent = async (owner: string, repo: string, path: string) => {
 export const getDataFromDataFileContents = async (content: string) => {
   if (!content) return [];
   const contentBuffer = Buffer.from(content, 'base64').toString('utf8');
-  const data = d3.csvParse(contentBuffer);
+  const data = csvParse(contentBuffer);
   return data;
 };
 

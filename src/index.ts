@@ -7,7 +7,7 @@ import { getRepoInvitations, writeToFile } from './github';
 import { getHomeBlocks, updateHome } from './slack-home';
 import { getUser, saveUser } from './user';
 import { notifyUserOfSummary } from './chart';
-// eslint-disable-next-line max-len
+
 import {
   parseSlackResponse,
   getChannelId,
@@ -19,7 +19,7 @@ import { User } from './types';
 const slackSigningSecret = process.env.SLACK_SIGNING_SECRET || '';
 
 const slackEvents = createEventAdapter(slackSigningSecret);
-const slackInteractions = createMessageAdapter(slackSigningSecret); // we could replace slack endpoint with this
+const slackInteractions = createMessageAdapter(slackSigningSecret);
 
 const app = express();
 
@@ -36,7 +36,8 @@ app.listen(port, () => {
 
 /* Slack events */
 
-// Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
+// Docs: https://api.slack.com/events/message.im
+
 slackEvents.on('app_home_opened', async (event) => {
   const slackUserId = event.user;
   const user: User = await getUser(slackUserId);
@@ -141,6 +142,7 @@ slackInteractions.action({ actionId: 'record_day' }, async (payload) => {
 // Important to have anyway so app registers a 200 status code when that happens
 // If not user sees a warning in Slack
 slackInteractions.action({}, (payload) => {
+  // console.log(payload);
   // console.log('Form drowndown select');
 });
 

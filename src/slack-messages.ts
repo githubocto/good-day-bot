@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import { EmojiConvertor } from 'emoji-js';
 import FormData from 'form-data';
 import fs from 'fs';
