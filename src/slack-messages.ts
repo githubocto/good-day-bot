@@ -2,10 +2,8 @@
 import { EmojiConvertor } from 'emoji-js';
 import FormData from 'form-data';
 import fs from 'fs';
-import path from 'path';
 import { Block, KnownBlock, SectionBlock } from '@slack/types';
 import { slaxios } from './api';
-import { getRepoInvitations, isBotInRepo } from './github';
 import { User } from './types';
 
 // Slack convertes emojis to shortcode. We need to convert back to unicode
@@ -77,105 +75,6 @@ export const messageUserTimeChange = async (user: User, time: string) => {
   const channelId = await getChannelId(user.slackid);
 
   await messageUser(channelId, getTimeChangeBlock(time));
-};
-
-/* Check repository for correct permission */
-
-const repoCheckBlock: SectionBlock[] = [
-  {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text: 'Press the button to check if your repository looks good to go!',
-    },
-    accessory: {
-      type: 'button',
-      text: {
-        type: 'plain_text',
-        text: 'Check Repo',
-        emoji: true,
-      },
-      value: 'check_repo',
-      action_id: 'check-repo',
-    },
-  },
-];
-
-const getRepoPermissionsBlock = (repoUrl = '') => {
-  const block: SectionBlock[] = [
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: `Make sure to add the \`good-day-bot\` as a collaborator to your repo (and if given an option with *write* permissions). Go to <${repoUrl}|${repoUrl}> to do that.`,
-      },
-    },
-  ];
-  return block;
-};
-
-const repoSuccessfulBlock: SectionBlock[] = [
-  {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text: "You're all set 🙌! You'll get a message when it's time to fill in your good day form.",
-    },
-  },
-];
-
-export const promptCheckRepo = async (user: User) => {
-  const channelId = await getChannelId(user.slackid);
-
-  await getRepoInvitations(user.ghuser, user.ghrepo); // accept available ivnitiations
-
-  const args = {
-    // user_id: slackUserId,
-    channel: channelId,
-    blocks: repoCheckBlock,
-  };
-  try {
-    await slaxios.post('chat.postMessage', args);
-  } catch (e) {
-    console.error(e);
-  }
-};
-
-const messageUserRepoPermissionsInstructions = async (user: User) => {
-  const channelId = await getChannelId(user.slackid);
-  const { ghuser } = user;
-  const { ghrepo } = user;
-  const repoUrl = `https://github.com/${ghuser}/${ghrepo}/settings/access`;
-
-  await messageUser(channelId, getRepoPermissionsBlock(repoUrl));
-
-  const dirPath = path.join(__dirname, '../assets/');
-  await messageUserImage(`${dirPath}invite-permission.png`, 'add-user.png', 'Add good-day-bot to your repo', user);
-  await messageUserImage(`${dirPath}write-permission.png`, 'add-user.png', 'Enable write premissions (if given the option)', user);
-
-  promptCheckRepo(user);
-};
-
-const messageUserRepoSetupSuccessful = async (user: User) => {
-  const channelId = await getChannelId(user.slackid);
-
-  await messageUser(channelId, repoSuccessfulBlock);
-};
-
-export const checkRepo = async (user: User) => {
-  const { ghuser } = user;
-  const { ghrepo } = user;
-
-  await getRepoInvitations(ghuser, ghrepo);
-
-  const isInRepo = await isBotInRepo(ghuser, ghrepo);
-  if (!isInRepo) {
-    await messageUserRepoPermissionsInstructions(user);
-    return;
-  }
-
-  // tell user they are setup correctly
-  await messageUserRepoSetupSuccessful(user);
 };
 
 /* Good day form questions */

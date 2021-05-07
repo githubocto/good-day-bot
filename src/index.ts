@@ -3,14 +3,12 @@ import express, { Request, Response } from 'express';
 import { createEventAdapter } from '@slack/events-api';
 import { createMessageAdapter } from '@slack/interactive-messages';
 import { Block, HeaderBlock } from '@slack/types';
-import { writeToFile } from './github';
+import { getRepoInvitations, writeToFile } from './github';
 import { getHomeBlocks, updateHome } from './slack-home';
 import { getUser, saveUser } from './user';
 import { notifyUserOfSummary } from './chart';
 // eslint-disable-next-line max-len
 import {
-  checkRepo,
-  promptCheckRepo,
   parseSlackResponse,
   getChannelId,
   messageUserTimeChange,
@@ -42,10 +40,11 @@ app.listen(port, () => {
 // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
 slackEvents.on('app_home_opened', async (event) => {
   const slackUserId = event.user;
-  saveUser({
-    slackUserId,
-  });
-  const blocks = getHomeBlocks();
+  const user: User = await getUser(slackUserId);
+  // saveUser({
+  //   slackUserId,
+  // });
+  const blocks = await getHomeBlocks(user);
   await updateHome(slackUserId, blocks);
 });
 
@@ -70,23 +69,24 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
   }
 
   const slackUserId = payload.user.id;
-  const user = await getUser(slackUserId);
+  let user = await getUser(slackUserId);
 
-  saveUser({
+  await saveUser({
     slackUserId,
     repoOwner: owner,
     repoName: name,
   });
+  user = await getUser(slackUserId);
+  await getRepoInvitations(user.ghuser, user.ghrepo);
 
-  const newBlocks = getHomeBlocks({ repo: wholeRepoString, timezone: '', isSaved: 'true' });
+  const newBlocks = await getHomeBlocks(user);
   await updateHome(slackUserId, newBlocks);
-  await promptCheckRepo(user);
 });
 
 slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (payload) => {
   console.log('select timepicker');
   const slackUserId = payload.user.id;
-  const user = await getUser(slackUserId);
+  let user = await getUser(slackUserId);
 
   const newPromptTime = payload.actions[0].selected_time;
 
@@ -94,13 +94,20 @@ slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (pa
     slackUserId,
     promptTime: newPromptTime,
   });
+  user = await getUser(slackUserId);
 
-  await messageUserTimeChange(user, newPromptTime);
+  const newBlocks = await getHomeBlocks(user);
+  await updateHome(slackUserId, newBlocks);
+
+  // await messageUserTimeChange(user, newPromptTime);
 });
 
 slackInteractions.action({ actionId: 'check-repo' }, async (payload) => {
   const user = await getUserFromPayload(payload);
-  checkRepo(user);
+  await getRepoInvitations(user.ghuser, user.ghrepo);
+  const newBlocks = await getHomeBlocks(user);
+  await updateHome(user.slackid, newBlocks);
+  // checkRepo(user);
 });
 
 slackInteractions.action({ actionId: 'trigger_prompt' }, async (payload) => {
@@ -120,7 +127,6 @@ slackInteractions.action({ actionId: 'record_day' }, async (payload) => {
   const headerBlock = blocks[0] as HeaderBlock;
   const date = headerBlock.block_id;
 
-  console.log(payload.state);
   const state = payload.state.values;
 
   const data = await parseSlackResponse(date, state);

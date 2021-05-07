@@ -1,25 +1,135 @@
 /* eslint-disable max-len */
 import { Block, KnownBlock } from '@slack/types';
 import { slaxios } from './api';
+import { isBotInRepo } from './github';
+import { User } from './types';
 
-// TODO: edit default valuees correctly for typescript
-export const getHomeBlocks = ({ repo, timezone, isSaved } = { repo: '', timezone: '', isSaved: '' }) =>
-  ([
+export const getHomeBlocks = async (user: User) => {
+  const repo = user ? `${user.ghuser}/${user.ghrepo}` : undefined;
+
+  const isBotSetUp = await isBotInRepo(user.ghuser, user.ghrepo);
+  const repoUrl = `https://github.com/${user.ghuser}/${user.ghrepo}`;
+  const isSetUp = repo && user.timezone && user.prompt_time && isBotSetUp;
+
+  const promptTime = user.prompt_time;
+  const [hour] = promptTime.split(':');
+  const friendlyPromptTime = `${+hour % 12}:00 ${+hour > 12 ? 'PM' : 'AM'}`;
+
+  const debugStep = isBotSetUp
+    ? [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `All set! We'll save your data in *<${repoUrl}|${repo}>*`,
+          },
+        },
+      ]
+    : [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: '🤔 Hmm, something needs to be updated',
+            emoji: true,
+          },
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `Make sure to add the \`good-day-bot\` as a collaborator to your repo (and if given an option with *write* permissions). Go to <${repoUrl}/settings/access|${repoUrl}/settings/access> to do that.`,
+          },
+          accessory: {
+            type: 'button',
+            text: {
+              type: 'plain_text',
+              text: 'Check my repo again',
+            },
+            value: 'GitHub',
+            action_id: 'check-repo',
+          },
+        },
+        {
+          type: 'image',
+          image_url: 'https://github.com/githubocto/good-day-images/blob/master/invite-permission.png?raw=true',
+          alt_text: 'Add good-day-bot to your repo',
+        },
+
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: 'Once invited, you should see something like this:',
+          },
+        },
+        {
+          type: 'image',
+          image_url: 'https://github.com/githubocto/good-day-images/blob/master/write-permission.png?raw=true',
+          alt_text: 'Enable write premissions (if given the option)',
+        },
+      ];
+
+  const header = isSetUp
+    ? [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `Welcome to Good Day. You're all set up! You'll get a message on *weekdays at ${friendlyPromptTime}* to fill in your Good Day form.
+We left the set-up instructions below, in case you want to change your GitHub repository or your prompt time.`,
+          },
+        },
+        {
+          // blank section for spacing
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: ' ',
+          },
+        },
+        { type: 'divider' },
+        {
+          // blank section for spacing
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: ' ',
+          },
+        },
+      ]
+    : [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: 'Welcome to Good Day! There are just a few steps to get set up.',
+          },
+        },
+      ];
+
+  const footer = isSetUp
+    ? [
+        {
+          type: 'header',
+          text: {
+            type: 'mrkdwn',
+            text: `You're all set 🙌! You'll get a message on weekdays at ${friendlyPromptTime} to fill in your Good Day form.`,
+            emoji: true,
+          },
+        },
+      ]
+    : [];
+  return ([
     {
       type: 'header',
       text: {
         type: 'plain_text',
-        text: 'Good Day',
+        text: 'The Good Day Project',
         emoji: true,
       },
     },
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: 'Welcome to Good Day! There are just a few steps to get set up.',
-      },
-    },
+    ...header,
     {
       type: 'section',
       text: {
@@ -69,6 +179,7 @@ export const getHomeBlocks = ({ repo, timezone, isSaved } = { repo: '', timezone
       element: {
         type: 'plain_text_input',
         action_id: 'onboarding-github-repo',
+        initial_value: repoUrl,
       },
       label: {
         type: 'plain_text',
@@ -76,35 +187,17 @@ export const getHomeBlocks = ({ repo, timezone, isSaved } = { repo: '', timezone
         emoji: true,
       },
     },
-    repo && {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: `🎉 Great success! We'll save your data in *${repo}*`,
-      },
-    },
-    // {
-    //   type: "image",
-    //   title: {
-    //     type: "plain_text",
-    //     text: "image1",
-    //     emoji: true,
-    //   },
-    //   image_url:
-    //     "https://api.slack.com/img/blocks/bkb_template_images/onboardingComplex.jpg",
-    //   alt_text: "image1",
-    // },
+    ...debugStep,
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `What time you would like me to ask how your day went? _This is in your timezone${
-          timezone ? ` (${timezone})` : ''
-        }_`,
+        text: `*What time you would like me to ask how your day went?*
+_This is in your timezone${user.timezone ? ` (${user.timezone})` : ''}_`,
       },
       accessory: {
         type: 'timepicker',
-        initial_time: '16:00',
+        initial_time: user.prompt_time,
         placeholder: {
           type: 'plain_text',
           text: 'Select time',
@@ -113,21 +206,9 @@ export const getHomeBlocks = ({ repo, timezone, isSaved } = { repo: '', timezone
         action_id: 'onboarding-timepicker-action',
       },
     },
-    ...(isSaved
-      ? [
-        {
-          type: 'divider',
-        },
-        {
-          type: 'header',
-          text: {
-            type: 'plain_text',
-            text: '👏 All set! Looking forward to catching up soon!',
-            emoji: true,
-          },
-        },
-      ]
-      : []),
+    ...footer,
+    { type: 'divider' },
+    { type: 'divider' },
     {
       type: 'actions',
       elements: [
@@ -159,6 +240,7 @@ export const getHomeBlocks = ({ repo, timezone, isSaved } = { repo: '', timezone
       ],
     },
   ] as (KnownBlock | Block)[]).filter(Boolean);
+};
 
 export const updateHome = async (slackUserId: string, blocks: (Block | KnownBlock)[]) => {
   const args = {
@@ -174,7 +256,7 @@ export const updateHome = async (slackUserId: string, blocks: (Block | KnownBloc
   };
   try {
     const res = await slaxios.post('views.publish', args);
-    console.log(res.data);
+    // console.log(res.data);
   } catch (e) {
     console.error(e);
   }
