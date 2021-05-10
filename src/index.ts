@@ -23,7 +23,7 @@ const slackInteractions = createMessageAdapter(slackSigningSecret);
 
 const app = express();
 
-app.use('/slack/events', slackEvents.requestListener());
+app.use('/events', slackEvents.requestListener());
 app.use('/interactive', slackInteractions.requestListener());
 
 app.use(express.json());
@@ -41,9 +41,6 @@ app.listen(port, () => {
 slackEvents.on('app_home_opened', async (event) => {
   const slackUserId = event.user;
   const user: User = await getUser(slackUserId);
-  // saveUser({
-  //   slackUserId,
-  // });
   const blocks = await getHomeBlocks(user);
   await updateHome(slackUserId, blocks);
 });
