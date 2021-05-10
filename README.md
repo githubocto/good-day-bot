@@ -58,9 +58,9 @@ In a new tab: `ngrok http 3000 --hostname octo-devex.ngrok.io`
 
 ### Slack app configuration
 
-1. Change the endpoint for interactive messages at: [interactive messages config](https://api.slack.com/apps/A0212TEULJU/interactive-messages?) to `https://octo-devex.ngrok.io/interactive`
+1. Enable interactivity and change the endpoint for interactive messages at: [interactivity and shortcuts](https://api.slack.com/apps/A0212TEULJU/interactive-messages?) to `https://octo-devex.ngrok.io/interactive`
 
-2. Change the endpoint for events at: [events config](https://api.slack.com/apps/A0212TEULJU/event-subscriptions?) to `https://octo-devex.ngrok.io/events`
+2. Enable events and change the endpoint for events at: [event subscriptions](https://api.slack.com/apps/A0212TEULJU/event-subscriptions?) to `https://octo-devex.ngrok.io/events`
 
 ## Building / Releasing
 
@@ -70,9 +70,11 @@ Deployment to the production app happens automatically when pushing to main by u
 
 ### Slack app configuration
 
-1. Change the endpoint for interactive messages at: [interactive messages config](https://api.slack.com/apps/A0212TEULJU/interactive-messages?) to `PRODUCTION_URL/interactive`
+1. Enable interactivity and change the endpoint for interactive messages at: [interactivity and shortcuts](https://api.slack.com/apps/A0212TEULJU/interactive-messages?) to `PRODUCTION_URL/interactive`
 
-2. Change the endpoint for events at: [events config](https://api.slack.com/apps/A0212TEULJU/event-subscriptions?) to `PRODUCTION_URL/events`
+2. Enable events and change the endpoint for events at: [event subscriptions](https://api.slack.com/apps/A0212TEULJU/event-subscriptions?) to `PRODUCTION_URL/events`
+
+3. Add the following Bot Token Scopes at: [oauth and permissions](https://api.slack.com/apps/A0212TEULJU/oauth?) `chat:write`, `files:write`, `im:write`, `incoming-webhook`, `users:read`
 
 ## License
 
