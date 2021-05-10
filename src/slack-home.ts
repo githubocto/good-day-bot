@@ -152,7 +152,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
       text: {
         type: 'mrkdwn',
         text:
-          '2️⃣\n*Invite the good-day bot*\nIn your new GitHub repo, click over to *Settings* and into *Manage access* (in the sidebar).\nOnce you click the *Invite a collaborator* button, search for `good-day-bot` and add the first option.',
+          '2️⃣\n*Invite the good-day bot*\nIn your new GitHub repo, click over to *Settings* and into *Manage access* (in the sidebar).\nOnce you click the *Invite a collaborator* button, search for `good-day-bot` and add the first option.\nIf you get the option, give the bot `write` access.',
       },
       // accessory: {
       //   type: "button",
