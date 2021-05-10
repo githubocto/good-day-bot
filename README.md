@@ -1,5 +1,3 @@
-README
-
 # Good Day Slack Bot
 
 Good Day is a Slack bot that pings users every day and asks how their day was. It saves the results in a GitHub repository of the user's choice, within a `good-day.csv` file in the repo.
