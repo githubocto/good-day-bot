@@ -68,6 +68,8 @@ In a new tab: `ngrok http 3000 --hostname octo-devex.ngrok.io`
 
 Deployment to the production app happens automatically when pushing to main by using a GitHub Action specified in `.github/workflows/main_octo-good-day-bot.yaml`.
 
+Or use the [Azure App Service VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azureappservice) for dev testing work.
+
 ### Slack app configuration
 
 1. Enable interactivity and change the endpoint for interactive messages at: [interactivity and shortcuts](https://api.slack.com/apps/A0212TEULJU/interactive-messages?) to `PRODUCTION_URL/interactive`
