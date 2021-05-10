@@ -35,7 +35,6 @@ export const saveUser = async (config: any) => {
     prompt_time: promptTime,
   };
 
-  // TODO: fix any types below
   const keys = Object.keys(metrics).filter((key) => (metrics as any)[key as string]);
   const valuesString = keys.map((key) => `${key}='${(metrics as any)[key]}'`).join(', ');
   const updateUserSql = `UPDATE USERS SET ${valuesString} WHERE slackid='${slackUserId}'`;
@@ -43,7 +42,7 @@ export const saveUser = async (config: any) => {
   await pool.query(updateUserSql);
 };
 
-export const getUser = async (slackUserId: any): Promise<any> => {
+export const getUser = async (slackUserId: any): Promise<User> => {
   if (!slackUserId) {
     return null;
   }
