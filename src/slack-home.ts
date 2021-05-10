@@ -154,16 +154,6 @@ We left the set-up instructions below, in case you want to change your GitHub re
         text:
           '2️⃣\n*Invite the good-day bot*\nIn your new GitHub repo, click over to *Settings* and into *Manage access* (in the sidebar).\nOnce you click the *Invite a collaborator* button, search for `good-day-bot` and add the first option.\nIf you get the option, give the bot `write` access.',
       },
-      // accessory: {
-      //   type: "button",
-      //   text: {
-      //     type: "plain_text",
-      //     text: "+ Good Day bot",
-      //   },
-      //   value: "GitHub",
-      //   url: "https://github.com/new",
-      //   action_id: "button-action",
-      // },
     },
     {
       type: 'section',
@@ -206,6 +196,8 @@ _This is in your timezone${user.timezone ? ` (${user.timezone})` : ''}_`,
       },
     },
     ...footer,
+    // These blocks are useful for debugging
+    /*
     { type: 'divider' },
     { type: 'divider' },
     {
@@ -238,6 +230,7 @@ _This is in your timezone${user.timezone ? ` (${user.timezone})` : ''}_`,
         },
       ],
     },
+    */
   ] as (KnownBlock | Block)[]).filter(Boolean);
 };
 
