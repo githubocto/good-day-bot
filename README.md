@@ -10,7 +10,7 @@ It also provides a series of visualizations to help users understand their data 
 
 ## How it Works
 
-<img src="assets/flow.png" alt="drawing"/>
+<img src="assets/diagram.png" alt="drawing"/>
 
 ### Slack App Express server
 
@@ -19,7 +19,12 @@ The repo contains the code for the core Good Day Slack bot, which is a Slack ser
 1. Stores a user's GitHub repo and time preference in a database by collecting info from the Slack app home panel.
 2. Messages a user every day on the time they have specified with a new Good Day form.
 3. Stores user's daily data into a `good-day.csv` file in the repo of their choice.
-4. Messages a user every week when new visualization charts have been generated from their data.
+4. Messages a user every week when new visualization charts have been generated from their data. 
+
+**⚠️ A note about privacy ⚠️**
+
+Once a user creates a GitHub repository they have to invite the `good-day-bot` [GitHub user](https://github.com/good-day-bot) as a collaborator to the repo. This GitHub account (and by extension this Slack app) has write access to ___only this one particular user repo___. This means we are NOT asking for or storing any GitHub user authentication data. 
+
 
 ### Azure functions
 
