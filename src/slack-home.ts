@@ -121,12 +121,9 @@ We left the set-up instructions below, in case you want to change your GitHub re
     : [];
   return ([
     {
-      type: 'header',
-      text: {
-        type: 'plain_text',
-        text: 'The Good Day Project',
-        emoji: true,
-      },
+      type: 'image',
+      image_url: 'https://github.com/githubocto/good-day-images/blob/master/banner.png?raw=true',
+      alt_text: 'The Good Day Project',
     },
     ...header,
     {
