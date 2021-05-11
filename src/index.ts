@@ -146,7 +146,7 @@ slackInteractions.action({}, (payload) => {
 /* Server endpoints */
 
 app.get('/', async (req, res) => {
-  res.send('beep boop');
+  res.send('beep boop beep boop');
 });
 
 app.post('/notify', async (req: Request, res: Response) => {
