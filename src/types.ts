@@ -14,4 +14,6 @@ export type User = {
   timezone: string;
   // eslint-disable-next-line camelcase
   prompt_time: string;
+  // eslint-disable-next-line camelcase
+  is_unsubscribed: boolean;
 };

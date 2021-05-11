@@ -77,7 +77,6 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
   await getRepoInvitations(user.ghuser, user.ghrepo);
 
   const newBlocks = await getHomeBlocks(user);
-  console.log('newBlocks', newBlocks);
   await updateHome(slackUserId, newBlocks);
 });
 
@@ -114,6 +113,28 @@ slackInteractions.action({ actionId: 'trigger_prompt' }, async (payload) => {
 slackInteractions.action({ actionId: 'trigger_report' }, async (payload) => {
   const user = await getUserFromPayload(payload);
   await notifyUserOfSummary(user);
+});
+
+slackInteractions.action({ actionId: 'resubscribe' }, async (payload) => {
+  let user = await getUserFromPayload(payload);
+  await saveUser({
+    slackUserId: user.slackid,
+    isUnsubscribed: false,
+  });
+  user = await getUserFromPayload(payload);
+  const newBlocks = await getHomeBlocks(user);
+  await updateHome(user.slackid, newBlocks);
+});
+
+slackInteractions.action({ actionId: 'unsubscribe' }, async (payload) => {
+  let user = await getUserFromPayload(payload);
+  await saveUser({
+    slackUserId: user.slackid,
+    isUnsubscribed: true,
+  });
+  user = await getUserFromPayload(payload);
+  const newBlocks = await getHomeBlocks(user);
+  await updateHome(user.slackid, newBlocks);
 });
 
 slackInteractions.action({ actionId: 'record_day' }, async (payload) => {

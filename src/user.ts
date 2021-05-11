@@ -4,7 +4,7 @@ import { getChannelId } from './slack-messages';
 import { User } from './types';
 
 export const saveUser = async (config: any) => {
-  const { slackUserId, repoOwner, repoName, promptTime } = config;
+  const { slackUserId, repoOwner, repoName, promptTime, isUnsubscribed } = config;
 
   if (!slackUserId) {
     return;
@@ -33,9 +33,10 @@ export const saveUser = async (config: any) => {
     ghuser: repoOwner,
     timezone: userDataRes.data.user.tz,
     prompt_time: promptTime,
+    is_unsubscribed: isUnsubscribed,
   };
 
-  const keys = Object.keys(metrics).filter((key) => (metrics as any)[key as string]);
+  const keys = Object.keys(metrics).filter((key) => (metrics as any)[key as string] !== undefined);
   const valuesString = keys.map((key) => `${key}='${(metrics as any)[key]}'`).join(', ');
   const updateUserSql = `UPDATE USERS SET ${valuesString} WHERE slackid='${slackUserId}'`;
 

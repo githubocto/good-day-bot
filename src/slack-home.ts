@@ -9,6 +9,7 @@ export const getHomeBlocks = async (user: User) => {
   const isBotSetUp = await isBotInRepo(user.ghuser, user.ghrepo);
   const repoUrl = `https://github.com/${user.ghuser}/${user.ghrepo}`;
   const isSetUp = repo && user.timezone && user.prompt_time && isBotSetUp;
+  const isUnsubscribed = user.is_unsubscribed;
 
   const promptTime = user.prompt_time;
   const [hour] = promptTime.split(':');
@@ -69,7 +70,31 @@ export const getHomeBlocks = async (user: User) => {
         },
       ];
 
-  const header = isSetUp
+  const header = isUnsubscribed
+    ? [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `Welcome to Good Day. *You have paused messages for now*.`,
+          },
+          accessory: {
+            type: 'button',
+            text: {
+              type: 'plain_text',
+              text: 'Turn messages back on',
+            },
+            value: 'GitHub',
+            action_id: 'resubscribe',
+          },
+        },
+        padding,
+        padding,
+        { type: 'divider' },
+        padding,
+        padding,
+      ]
+    : isSetUp
     ? [
         {
           type: 'section',
@@ -79,23 +104,9 @@ export const getHomeBlocks = async (user: User) => {
 We left the set-up instructions below, in case you want to change your GitHub repository or your prompt time.`,
           },
         },
-        {
-          // blank section for spacing
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: ' ',
-          },
-        },
+        padding,
         { type: 'divider' },
-        {
-          // blank section for spacing
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: ' ',
-          },
-        },
+        padding,
       ]
     : [
         {
@@ -107,7 +118,53 @@ We left the set-up instructions below, in case you want to change your GitHub re
         },
       ];
 
-  const footer = isSetUp
+  const unsubscribe = isSetUp
+    ? [
+        padding,
+        { type: 'divider' },
+        padding,
+        {
+          type: 'section',
+          text: {
+            type: 'plain_text',
+            text: `🛑 Not interested in receiving messages from Good Day anymore?`,
+            emoji: true,
+          },
+          accessory: isUnsubscribed
+            ? {
+                type: 'button',
+                text: {
+                  type: 'plain_text',
+                  text: 'Turn messages back on',
+                },
+                value: 'GitHub',
+                action_id: 'resubscribe',
+              }
+            : {
+                type: 'button',
+                text: {
+                  type: 'plain_text',
+                  text: 'Turn messages off',
+                },
+                value: 'GitHub',
+                action_id: 'unsubscribe',
+              },
+        },
+      ]
+    : [];
+
+  const footer = isUnsubscribed
+    ? [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: `You're all set, but you have paused messages for now.`,
+            emoji: true,
+          },
+        },
+      ]
+    : isSetUp
     ? [
         {
           type: 'header',
@@ -125,7 +182,9 @@ We left the set-up instructions below, in case you want to change your GitHub re
       image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/banner.png?raw=true',
       alt_text: 'The Good Day Project',
     },
+    padding,
     ...header,
+    padding,
     {
       type: 'section',
       text: {
@@ -144,6 +203,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
         action_id: 'button-action',
       },
     },
+    padding,
     {
       type: 'section',
       text: {
@@ -152,6 +212,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
           '2️⃣\n*Invite the good-day bot*\nIn your new GitHub repo, click over to *Settings* and into *Manage access* (in the sidebar).\nOnce you click the *Invite a collaborator* button, search for `good-day-bot` and add the first option.\nIf you get the option, give the bot `write` access.',
       },
     },
+    padding,
     {
       type: 'section',
       text: {
@@ -192,6 +253,7 @@ _This is in your timezone${user.timezone ? ` (${user.timezone})` : ''}_`,
         action_id: 'onboarding-timepicker-action',
       },
     },
+    ...unsubscribe,
     ...footer,
     // These blocks are useful for debugging
     /*
@@ -229,6 +291,15 @@ _This is in your timezone${user.timezone ? ` (${user.timezone})` : ''}_`,
     },
     */
   ] as (KnownBlock | Block)[]).filter(Boolean);
+};
+
+const padding = {
+  // blank section for spacing
+  type: 'section',
+  text: {
+    type: 'mrkdwn',
+    text: ' ',
+  },
 };
 
 export const updateHome = async (slackUserId: string, blocks: (Block | KnownBlock)[]) => {
