@@ -19,18 +19,18 @@ The repo contains the code for the core Good Day Slack bot, which is a Slack ser
 1. Stores a user's GitHub repo and time preference in a database by collecting info from the Slack app home panel.
 2. Messages a user every day on the time they have specified with a new Good Day form.
 3. Stores user's daily data into a `good-day.csv` file in the repo of their choice.
-4. Messages a user every week when new visualization charts have been generated from their data. 
+4. Messages a user every week when new visualization charts have been generated from their data.
 
 **⚠️ A note about privacy ⚠️**
 
-Once a user creates a GitHub repository they have to invite the `good-day-bot` [GitHub user](https://github.com/good-day-bot) as a collaborator to the repo. This GitHub account (and by extension this Slack app) has write access to ___only this one particular user repo___. This means we are NOT asking for or storing any GitHub user authentication data. 
+Once a user creates a GitHub repository they have to invite the `good-day-bot` [GitHub user](https://github.com/good-day-bot) as a collaborator to the repo. This GitHub account (and by extension this Slack app) has write access to ___only this one particular user repo___. This means we are NOT asking for or storing any GitHub user authentication data.
 
 
 ### Azure functions
 
 This Slack Bot depends on two Azure functions: [https://github.com/githubocto/good-day-azure](https://github.com/githubocto/good-day-azure)
 
-1. **Timed Notify**: This function runs every hour, checks the database for users who need a new form, and hits an endpoint on the express server to trigger a new Good Day form for users daily. 
+1. **Timed Notify**: This function runs every hour, checks the database for users who need a new form, and hits an endpoint on the express server to trigger a new Good Day form for users daily.
 2. **Generate Charts**: This function runs every week and generates visualization charts for users in their GitHub repos. It also hits an endpoint on the express server to notify users new charts are ready.
 
 ## Development

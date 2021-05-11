@@ -51,7 +51,7 @@ export const getHomeBlocks = async (user: User) => {
         },
         {
           type: 'image',
-          image_url: 'https://github.com/githubocto/good-day-bot/blob/main/images/invite-permission.png?raw=true',
+          image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/invite-permission.png?raw=true',
           alt_text: 'Add good-day-bot to your repo',
         },
 
@@ -64,7 +64,7 @@ export const getHomeBlocks = async (user: User) => {
         },
         {
           type: 'image',
-          image_url: 'https://github.com/githubocto/good-day-bot/blob/main/images/write-permission.png?raw=true',
+          image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/write-permission.png?raw=true',
           alt_text: 'Enable write premissions (if given the option)',
         },
       ];
@@ -122,7 +122,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
   return ([
     {
       type: 'image',
-      image_url: 'https://github.com/githubocto/good-day-bot/blob/main/images/banner.png?raw=true',
+      image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/banner.png?raw=true',
       alt_text: 'The Good Day Project',
     },
     ...header,
