@@ -42,10 +42,30 @@ app.listen(port, () => {
 slackEvents.on('app_home_opened', async (event) => {
   const slackUserId = event.user;
   const user: User = await getUser(slackUserId);
-  const blocks = await getHomeBlocks(user);
-  await updateHome(slackUserId, blocks);
 
-  track({ event: 'app_home_opened' });
+  // user exists
+  if (user) {
+    const blocks = await getHomeBlocks(user);
+    await updateHome(slackUserId, blocks);
+
+    track({ event: 'app_home_opened' });
+  } else {
+    // first time user opening the app
+    const defaultUser = {
+      prompt_time: '17:00',
+      slackid: slackUserId,
+      is_unsubscribed: false,
+    };
+
+    const blocks = await getHomeBlocks(defaultUser, true);
+    await updateHome(slackUserId, blocks);
+
+    await saveUser({
+      ...defaultUser,
+    });
+
+    track({ event: 'app_home_opened_first_time' });
+  }
 });
 
 /* Slack interactive messages */
@@ -72,9 +92,9 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
   let user = await getUser(slackUserId);
 
   await saveUser({
-    slackUserId,
-    repoOwner: owner,
-    repoName: name,
+    slackid: slackUserId,
+    ghuser: owner,
+    ghrepo: name,
   });
   user = await getUser(slackUserId);
   await getRepoInvitations(user.ghuser, user.ghrepo);
@@ -96,8 +116,8 @@ slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (pa
   const newPromptTime = payload.actions[0].selected_time;
 
   await saveUser({
-    slackUserId,
-    promptTime: newPromptTime,
+    slackid: slackUserId,
+    prompt_time: newPromptTime,
   });
   user = await getUser(slackUserId);
 
@@ -141,8 +161,8 @@ slackInteractions.action({ actionId: 'check-report' }, async () => {
 slackInteractions.action({ actionId: 'resubscribe' }, async (payload) => {
   let user = await getUserFromPayload(payload);
   await saveUser({
-    slackUserId: user.slackid,
-    isUnsubscribed: false,
+    slackid: user.slackid,
+    is_unsubscribed: false,
   });
   user = await getUserFromPayload(payload);
   const newBlocks = await getHomeBlocks(user);
@@ -154,8 +174,8 @@ slackInteractions.action({ actionId: 'resubscribe' }, async (payload) => {
 slackInteractions.action({ actionId: 'unsubscribe' }, async (payload) => {
   let user = await getUserFromPayload(payload);
   await saveUser({
-    slackUserId: user.slackid,
-    isUnsubscribed: true,
+    slackid: user.slackid,
+    is_unsubscribed: true,
   });
   user = await getUserFromPayload(payload);
   const newBlocks = await getHomeBlocks(user);

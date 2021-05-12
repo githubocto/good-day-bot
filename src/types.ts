@@ -7,13 +7,13 @@ export type FormResponseField = typeof fields[number];
 export type FormResponse = Record<FormResponseField | 'date', string>;
 
 export type User = {
-  ghrepo: string;
-  ghuser: string;
+  ghrepo?: string;
+  ghuser?: string;
   slackid: string;
-  channelid: string;
-  timezone: string;
+  channelid?: string;
+  timezone?: string;
   // eslint-disable-next-line camelcase
-  prompt_time: string;
+  prompt_time?: string;
   // eslint-disable-next-line camelcase
-  is_unsubscribed: boolean;
+  is_unsubscribed?: boolean;
 };

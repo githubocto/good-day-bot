@@ -12,11 +12,13 @@ const padding = {
   },
 };
 
-export const getHomeBlocks = async (user: User) => {
-  const repo = user ? `${user.ghuser}/${user.ghrepo}` : undefined;
+// firstTime = true if very first time user opens up the app.
+// we would not have a user in the db if that's the case.
+export const getHomeBlocks = async (user: User, firstTime = false) => {
+  const repo = (user.ghuser && user.ghrepo) ? `${user.ghuser}/${user.ghrepo}` : '';
 
   const isBotSetUp = await isBotInRepo(user.ghuser, user.ghrepo);
-  const repoUrl = `https://github.com/${user.ghuser}/${user.ghrepo}`;
+  const repoUrl = (user.ghuser && user.ghrepo) ? `https://github.com/${user.ghuser}/${user.ghrepo}` : '';
   const isSetUp = repo && user.timezone && user.prompt_time && isBotSetUp;
   const isUnsubscribed = user.is_unsubscribed;
 
@@ -78,6 +80,8 @@ export const getHomeBlocks = async (user: User) => {
           alt_text: 'Enable write premissions (if given the option)',
         },
       ];
+
+  const showDebug = firstTime ? '' : debugStep;
 
   // eslint-disable-next-line no-nested-ternary
   const header = isUnsubscribed
@@ -250,7 +254,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
         emoji: true,
       },
     },
-    ...debugStep,
+    ...showDebug,
     {
       type: 'section',
       text: {

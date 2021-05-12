@@ -18,8 +18,8 @@ export const track = async (params: TrackParams) => {
         container: 'good-day-bot',
         event,
         payload: {
-        source: 'good-day-bot',
-        ...payload,
+            source: 'good-day-bot',
+            ...payload,
         },
     };
 
