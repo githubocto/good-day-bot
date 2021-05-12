@@ -236,7 +236,7 @@ const messageBlocks: (KnownBlock | Block)[] = [
     elements: [
       {
         type: 'button',
-        action_id: 'record_day',
+        action_id: 'record-day',
         text: {
           type: 'plain_text',
           text: 'Save my response',

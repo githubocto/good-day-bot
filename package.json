@@ -25,7 +25,7 @@
   "scripts": {
     "dev": "npm-run-all -l build -p build:watch start:watch",
     "start": "node dist/index.js",
-    "start:watch": "nodemon -w dist -e js dist/index.js",
+    "start:watch": "NODE_ENV=development nodemon -w dist -e js dist/index.js",
     "build": "tsc -p tsconfig.json --pretty",
     "build:watch": "npm run build -- -w",
     "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
@@ -47,6 +47,7 @@
     "emoji-js": "^3.5.0",
     "express": "^4.17.1",
     "form-data": "^4.0.0",
+    "node-fetch": "^2.6.1",
     "pg": "^8.6.0",
     "query-string": "^7.0.0"
   },

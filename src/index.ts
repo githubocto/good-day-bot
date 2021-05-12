@@ -3,10 +3,11 @@ import express, { Request, Response } from 'express';
 import { createEventAdapter } from '@slack/events-api';
 import { createMessageAdapter } from '@slack/interactive-messages';
 import { Block, HeaderBlock } from '@slack/types';
-import { getRepoInvitations, writeToFile } from './github';
+import { getRepoInvitations, isBotInRepo, writeToFile } from './github';
 import { getHomeBlocks, updateHome } from './slack-home';
 import { getUser, saveUser } from './user';
 import { notifyUserOfSummary } from './chart';
+import { track } from './analytics';
 
 import {
   parseSlackResponse,
@@ -43,6 +44,8 @@ slackEvents.on('app_home_opened', async (event) => {
   const user: User = await getUser(slackUserId);
   const blocks = await getHomeBlocks(user);
   await updateHome(slackUserId, blocks);
+
+  track({ event: 'app_home_opened' });
 });
 
 /* Slack interactive messages */
@@ -78,10 +81,15 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
 
   const newBlocks = await getHomeBlocks(user);
   await updateHome(slackUserId, newBlocks);
+
+  // check if repo successful the first time
+  const isBotSetUp = await isBotInRepo(owner, name);
+  if (isBotSetUp) {
+    track({ event: 'onboarding-github-repo-success' });
+  }
 });
 
 slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (payload) => {
-  console.log('select timepicker');
   const slackUserId = payload.user.id;
   let user = await getUser(slackUserId);
 
@@ -95,6 +103,8 @@ slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (pa
 
   const newBlocks = await getHomeBlocks(user);
   await updateHome(slackUserId, newBlocks);
+
+  track({ event: 'onboarding-timepicker-action-success', payload: { time: newPromptTime } });
 });
 
 slackInteractions.action({ actionId: 'check-repo' }, async (payload) => {
@@ -102,17 +112,30 @@ slackInteractions.action({ actionId: 'check-repo' }, async (payload) => {
   await getRepoInvitations(user.ghuser, user.ghrepo);
   const newBlocks = await getHomeBlocks(user);
   await updateHome(user.slackid, newBlocks);
-  // checkRepo(user);
+
+  // check if repo successful after providing instructions
+  const isBotSetUp = await isBotInRepo(user.ghuser, user.ghrepo);
+  if (isBotSetUp) {
+    track({ event: 'onboarding-github-repo-success-followup' });
+  }
 });
 
-slackInteractions.action({ actionId: 'trigger_prompt' }, async (payload) => {
+slackInteractions.action({ actionId: 'trigger-prompt' }, async (payload) => {
   const user = await getUserFromPayload(payload);
   await messageUserQuestionsForm(user.channelid);
 });
 
-slackInteractions.action({ actionId: 'trigger_report' }, async (payload) => {
+slackInteractions.action({ actionId: 'trigger-report' }, async (payload) => {
   const user = await getUserFromPayload(payload);
   await notifyUserOfSummary(user);
+
+  // report sent to user
+  track({ event: 'trigger-report' });
+});
+
+slackInteractions.action({ actionId: 'check-report' }, async () => {
+  // user clicks 'check report' button
+  track({ event: 'check-report' });
 });
 
 slackInteractions.action({ actionId: 'resubscribe' }, async (payload) => {
@@ -124,6 +147,8 @@ slackInteractions.action({ actionId: 'resubscribe' }, async (payload) => {
   user = await getUserFromPayload(payload);
   const newBlocks = await getHomeBlocks(user);
   await updateHome(user.slackid, newBlocks);
+
+  track({ event: 'resubscribe' });
 });
 
 slackInteractions.action({ actionId: 'unsubscribe' }, async (payload) => {
@@ -135,9 +160,11 @@ slackInteractions.action({ actionId: 'unsubscribe' }, async (payload) => {
   user = await getUserFromPayload(payload);
   const newBlocks = await getHomeBlocks(user);
   await updateHome(user.slackid, newBlocks);
+
+  track({ event: 'unsubscribe' });
 });
 
-slackInteractions.action({ actionId: 'record_day' }, async (payload) => {
+slackInteractions.action({ actionId: 'record-day' }, async (payload) => {
   const user = await getUserFromPayload(payload);
 
   const blocks = payload.message.blocks as Block[];
@@ -154,6 +181,8 @@ slackInteractions.action({ actionId: 'record_day' }, async (payload) => {
   }
 
   await messageUserFormSuccessful(user);
+
+  track({ event: 'record-day-successful' });
 });
 
 // Everything else we don't catch above like a dropdown menu select on the user form

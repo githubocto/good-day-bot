@@ -29,7 +29,7 @@ export const notifyUserOfSummary = async (user: User) => {
         },
         value: 'click_me_123',
         url: link,
-        action_id: 'button-action',
+        action_id: 'check-report',
       },
     },
   ];
