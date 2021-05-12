@@ -3,6 +3,15 @@ import { slaxios } from './api';
 import { isBotInRepo } from './github';
 import { User } from './types';
 
+const padding = {
+  // blank section for spacing
+  type: 'section',
+  text: {
+    type: 'mrkdwn',
+    text: ' ',
+  },
+};
+
 export const getHomeBlocks = async (user: User) => {
   const repo = user ? `${user.ghuser}/${user.ghrepo}` : undefined;
 
@@ -70,12 +79,14 @@ export const getHomeBlocks = async (user: User) => {
         },
       ];
 
+  // eslint-disable-next-line no-nested-ternary
   const header = isUnsubscribed
     ? [
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
+            // eslint-disable-next-line quotes
             text: `Welcome to Good Day. *You have paused messages for now*.`,
           },
           accessory: {
@@ -127,6 +138,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
           type: 'section',
           text: {
             type: 'plain_text',
+            // eslint-disable-next-line quotes
             text: `🛑 Not interested in receiving messages from Good Day anymore?`,
             emoji: true,
           },
@@ -153,12 +165,14 @@ We left the set-up instructions below, in case you want to change your GitHub re
       ]
     : [];
 
+  // eslint-disable-next-line no-nested-ternary
   const footer = isUnsubscribed
     ? [
         {
           type: 'header',
           text: {
             type: 'plain_text',
+            // eslint-disable-next-line quotes
             text: `You're all set, but you have paused messages for now.`,
             emoji: true,
           },
@@ -271,8 +285,8 @@ _This is in your timezone${user.timezone ? ` (${user.timezone})` : ''}_`,
             text: 'Trigger prompt',
             emoji: true,
           },
-          value: 'trigger_prompt',
-          action_id: 'trigger_prompt',
+          value: 'trigger-prompt',
+          action_id: 'trigger-prompt',
         },
       ],
     },
@@ -286,22 +300,13 @@ _This is in your timezone${user.timezone ? ` (${user.timezone})` : ''}_`,
             text: 'Trigger report',
             emoji: true,
           },
-          value: 'trigger_report',
-          action_id: 'trigger_report',
+          value: 'trigger-report',
+          action_id: 'trigger-report',
         },
       ],
     },
     */
   ] as (KnownBlock | Block)[]).filter(Boolean);
-};
-
-const padding = {
-  // blank section for spacing
-  type: 'section',
-  text: {
-    type: 'mrkdwn',
-    text: ' ',
-  },
 };
 
 export const updateHome = async (slackUserId: string, blocks: (Block | KnownBlock)[]) => {
