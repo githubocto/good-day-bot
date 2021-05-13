@@ -8,10 +8,10 @@ interface TrackParams {
 
 export const track = async (params: TrackParams) => {
     const { event, payload } = params;
-    // if (process.env.NODE_ENV === 'development') {
-    //   console.info('Analytics Disabled in development', params);
-    //   return;
-    // }
+    if (process.env.NODE_ENV === 'development') {
+      console.info('Analytics Disabled in development', params);
+      return;
+    }
 
     const endpoint = 'https://octo-metrics.azurewebsites.net/api/CaptureEvent';
     const body = {
