@@ -4,7 +4,7 @@ Good Day is a Slack bot that pings users every day and asks how their day was. I
 
 <img src="assets/form.png" alt="drawing" width="500"/>
 
-It also provides a series of visualizations to help users understand their data over time. For a preview of what this looks like check out: [https://github.com/githubocto/good-day-demo](https://github.com/githubocto/good-day-demo)
+It also provides a series of visualizations to help users understand their data over time.
 
 <img src="assets/visualization.png" alt="drawing" width="500"/>
 
