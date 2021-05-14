@@ -32,7 +32,7 @@ export const getHomeBlocks = async (user: User, debug?: Debug) => {
   const [hour] = promptTime.split(':');
   const friendlyPromptTime = +hour === 12 ? '12:00 PM' : `${+hour % 12}:00 ${+hour >= 12 ? 'PM' : 'AM'}`;
 
-  // if inviteBot or repoClaimed state then repo NOT setup
+  // repo is only truly setup when Debug is setupComplete
   const isSetUp = !((debug === Debug.repoClaimed || debug === Debug.inviteBot || debug === Debug.noDebug || debug === Debug.invalidRepo));
 
   const showDebug = (() => {

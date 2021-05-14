@@ -95,23 +95,36 @@ const showHomeBlock = async (isBotSetUp: boolean, slackUserId: string, owner: st
       });
       const user: User = await getUser(slackUserId); // fetch the newly saved user
       newBlocks = await getHomeBlocks(user, Debug.setupComplete);
+
+      // check if repo successful
+      if (isBotSetUp) {
+        track({ event: 'onboarding-github-repo-success' });
+      }
     } else { // if repo is NOT unique, show debug message around claiming a unique repo
       const user: User = await getUser(slackUserId);
       user.ghuser = owner;
       user.ghrepo = name;
       newBlocks = await getHomeBlocks(user, Debug.repoClaimed);
+
+      if (isBotSetUp) {
+        track({ event: 'onboarding-github-repo-collision' });
+      }
     }
   } else { // if bot is not setup show debug info for inviting the bot
     const user: User = await getUser(slackUserId);
     user.ghuser = owner;
     user.ghrepo = name;
     newBlocks = await getHomeBlocks(user, Debug.inviteBot);
+
+    if (isBotSetUp) {
+      track({ event: 'onboarding-github-repo-no-bot-invite' });
+    }
   }
 
   await updateHome(slackUserId, newBlocks);
 };
 
-slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload, respond) => {
+slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload) => {
   const repo = payload.actions[0].value;
   const wholeRepoString = repo.split('github.com/')[1] || '';
   const [owner, name] = wholeRepoString.split('/');
@@ -130,11 +143,6 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
   // show home block given state of the repo and user
   const slackUserId = payload.user.id;
   await showHomeBlock(isBotSetUp, slackUserId, owner, name);
-
-  // check if repo successful the first time
-  if (isBotSetUp) {
-    track({ event: 'onboarding-github-repo-success' });
-  }
 });
 
 // we might not have saved the repo yet in our database
@@ -142,17 +150,13 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
 slackInteractions.action({ actionId: 'check-repo' }, async (payload) => {
   const [owner, name] = payload.actions[0].value.replace('https://github.com/', '').split('/');
 
+  // try to accept the repo invitation
   await getRepoInvitations(owner, name);
   const isBotSetUp = await isBotInRepo(owner, name);
 
   // show home block given state of the repo and user
   const slackUserId = payload.user.id;
   await showHomeBlock(isBotSetUp, slackUserId, owner, name);
-
-  // check if repo successful after providing instructions
-  if (isBotSetUp) {
-    track({ event: 'onboarding-github-repo-success-followup' });
-  }
 });
 
 slackInteractions.action({ actionId: 'onboarding-timepicker-action' }, async (payload) => {
