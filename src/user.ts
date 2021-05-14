@@ -54,8 +54,6 @@ export const getUser = async (slackUserId: string): Promise<User> => {
 
   const { rows: users } = await pool.query(findUserSql);
 
-  console.log(users);
-
   // no user found we need to return
   if (users.length === 0) {
     return null;

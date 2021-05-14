@@ -116,7 +116,10 @@ slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload,
   const wholeRepoString = repo.split('github.com/')[1] || '';
   const [owner, name] = wholeRepoString.split('/');
   if (!owner || !name) {
-    await respond({ text: 'Invalid repo UR.' }); // TODO: send a message if invalid repo
+    const slackUserId = payload.user.id;
+    const user: User = await getUser(slackUserId);
+    const newBlocks = await getHomeBlocks(user, Debug.invalidRepo);
+    await updateHome(slackUserId, newBlocks);
     return;
   }
 

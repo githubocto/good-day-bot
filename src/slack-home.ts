@@ -8,6 +8,7 @@ export enum Debug {
   inviteBot = 'invite', // debug message to invite bot
   repoClaimed = 'claimed', // repo was already claimed by someone else
   setupComplete = 'complete', // repo setup successful
+  invalidRepo = 'invalid' // repo is invalid
 }
 
 const padding = {
@@ -32,7 +33,7 @@ export const getHomeBlocks = async (user: User, debug?: Debug) => {
   const friendlyPromptTime = +hour === 12 ? '12:00 PM' : `${+hour % 12}:00 ${+hour >= 12 ? 'PM' : 'AM'}`;
 
   // if inviteBot or repoClaimed state then repo NOT setup
-  const isSetUp = !((debug === Debug.repoClaimed || debug === Debug.inviteBot || debug === Debug.noDebug));
+  const isSetUp = !((debug === Debug.repoClaimed || debug === Debug.inviteBot || debug === Debug.noDebug || debug === Debug.invalidRepo));
 
   const showDebug = (() => {
     switch (debug) {
@@ -88,6 +89,16 @@ export const getHomeBlocks = async (user: User, debug?: Debug) => {
             text: {
               type: 'mrkdwn',
               text: `Hmm it looks like someone that is not you has already registered that repo *<${repoUrl}|${repo}>*`,
+            },
+          },
+        ];
+      case Debug.invalidRepo:
+        return [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: 'There\'s something wrong with your repo URL. Try adding it in this format https://github.com/username/repo',
             },
           },
         ];
