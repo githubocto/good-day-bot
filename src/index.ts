@@ -45,6 +45,7 @@ slackEvents.on('app_home_opened', async (event) => {
 
   // user exists
   if (user) {
+    // there are two cases - if a user exists but hasn't saved a valid repo and if a user exists and has saved a valid repo
     const blocks = user.ghrepo ? await getHomeBlocks(user, Debug.setupComplete) : await getHomeBlocks(user, Debug.noDebug);
     await updateHome(slackUserId, blocks);
 
@@ -111,7 +112,6 @@ const showHomeBlock = async (isBotSetUp: boolean, slackUserId: string, owner: st
 };
 
 slackInteractions.action({ actionId: 'onboarding-github-repo' }, async (payload, respond) => {
-  console.log('onboarding');
   const repo = payload.actions[0].value;
   const wholeRepoString = repo.split('github.com/')[1] || '';
   const [owner, name] = wholeRepoString.split('/');
