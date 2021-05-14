@@ -1,7 +1,14 @@
 import { Block, KnownBlock } from '@slack/types';
 import { slaxios } from './api';
-import { isBotInRepo } from './github';
 import { User } from './types';
+
+// eslint-disable-next-line no-shadow
+export enum Debug {
+  noDebug = 'none', // first time user, do not show any debug info
+  inviteBot = 'invite', // debug message to invite bot
+  repoClaimed = 'claimed', // repo was already claimed by someone else
+  setupComplete = 'complete', // repo setup successful
+}
 
 const padding = {
   // blank section for spacing
@@ -14,74 +21,92 @@ const padding = {
 
 // firstTime = true if very first time user opens up the app.
 // we would not have a user in the db if that's the case.
-export const getHomeBlocks = async (user: User, firstTime = false) => {
+export const getHomeBlocks = async (user: User, debug?: Debug) => {
   const repo = (user.ghuser && user.ghrepo) ? `${user.ghuser}/${user.ghrepo}` : '';
-
-  const isBotSetUp = await isBotInRepo(user.ghuser, user.ghrepo);
   const repoUrl = (user.ghuser && user.ghrepo) ? `https://github.com/${user.ghuser}/${user.ghrepo}` : '';
-  const isSetUp = repo && user.timezone && user.prompt_time && isBotSetUp;
+
   const isUnsubscribed = user.is_unsubscribed;
 
   const promptTime = user.prompt_time;
   const [hour] = promptTime.split(':');
   const friendlyPromptTime = +hour === 12 ? '12:00 PM' : `${+hour % 12}:00 ${+hour >= 12 ? 'PM' : 'AM'}`;
 
-  const debugStep = isBotSetUp
-    ? [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `All set! We'll save your data in *<${repoUrl}|${repo}>*`,
-          },
-        },
-      ]
-    : [
-        {
-          type: 'header',
-          text: {
-            type: 'plain_text',
-            text: '🤔 Hmm, something needs to be updated',
-            emoji: true,
-          },
-        },
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `Make sure to add the \`good-day-bot\` as a collaborator to your repo (and if given an option with *write* permissions). Go to <${repoUrl}/settings/access|${repoUrl}/settings/access> to do that.`,
-          },
-          accessory: {
-            type: 'button',
+  // if inviteBot or repoClaimed state then repo NOT setup
+  const isSetUp = !((debug === Debug.repoClaimed || debug === Debug.inviteBot || debug === Debug.noDebug));
+
+  const showDebug = (() => {
+    switch (debug) {
+      case Debug.inviteBot:
+        return [
+          {
+            type: 'header',
             text: {
               type: 'plain_text',
-              text: 'Check my repo again',
+              text: '🤔 Hmm, something needs to be updated',
+              emoji: true,
             },
-            value: 'GitHub',
-            action_id: 'check-repo',
           },
-        },
-        {
-          type: 'image',
-          image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/invite-permission.png?raw=true',
-          alt_text: 'Add good-day-bot to your repo',
-        },
-
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: 'Once invited, you should see something like this:',
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Make sure to add the \`good-day-bot\` as a collaborator to your repo (and if given an option with *write* permissions). Go to <${repoUrl}/settings/access|${repoUrl}/settings/access> to do that.`,
+            },
+            accessory: {
+              type: 'button',
+              text: {
+                type: 'plain_text',
+                text: 'Check my repo again',
+              },
+              value: `${repoUrl}`,
+              action_id: 'check-repo',
+            },
           },
-        },
-        {
-          type: 'image',
-          image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/write-permission.png?raw=true',
-          alt_text: 'Enable write premissions (if given the option)',
-        },
-      ];
+          {
+            type: 'image',
+            image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/invite-permission.png?raw=true',
+            alt_text: 'Add good-day-bot to your repo',
+          },
 
-  const showDebug = firstTime ? '' : debugStep;
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: 'Once invited, you should see something like this:',
+            },
+          },
+          {
+            type: 'image',
+            image_url: 'https://github.com/githubocto/good-day-bot/blob/main/assets/write-permission.png?raw=true',
+            alt_text: 'Enable write premissions (if given the option)',
+          },
+        ];
+      case Debug.repoClaimed:
+        return [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hmm it looks like someone that is not you has already registered that repo *<${repoUrl}|${repo}>*`,
+            },
+          },
+        ];
+      case Debug.setupComplete:
+        return [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `All set! We'll save your data in *<${repoUrl}|${repo}>*`,
+            },
+          },
+        ];
+      case Debug.noDebug:
+        return '';
+      default:
+        return '';
+    }
+  })();
 
   // eslint-disable-next-line no-nested-ternary
   const header = isUnsubscribed
@@ -228,7 +253,7 @@ We left the set-up instructions below, in case you want to change your GitHub re
       text: {
         type: 'mrkdwn',
         text:
-          '2️⃣\n*Invite the good-day bot*\nIn your new GitHub repo, click over to *Settings* and into *Manage access* (in the sidebar).\nOnce you click the *Invite a collaborator* button, search for `good-day-bot` and add the first option.\nIf you get the option, give the bot `write` access.',
+          '2️⃣\n*Invite the good-day bot*\nIn your new GitHub repo, click over to *Settings* and into *Manage access* (in the sidebar).\nClick the *Invite a collaborator* button and add the `good-day-bot` user.\nIf you get the option, give the bot `write` access.',
       },
     },
     padding,
