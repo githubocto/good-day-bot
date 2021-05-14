@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
+import cors from 'cors';
 import { createEventAdapter } from '@slack/events-api';
 import { createMessageAdapter } from '@slack/interactive-messages';
 import { Block, HeaderBlock } from '@slack/types';
@@ -254,11 +255,23 @@ slackInteractions.action({}, (payload) => {
 
 /* Server endpoints */
 
-app.get('/', async (req, res) => {
+const whitelist = ['http://example1.com'];
+const corsOptions = {
+  origin: (origin: string, callback) => {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+};
+
+app.get('/', async (req: Request, res: Response) => {
   res.send('beep boop beep boop');
 });
 
-app.post('/notify', async (req: Request, res: Response) => {
+app.post('/notify', cors(corsOptions), async (req: Request, res: Response) => {
+  console.log('test');
   if (!req.body.user_id) {
     res.status(400).send('You must provide a User ID');
     return;
@@ -278,7 +291,7 @@ app.post('/notify', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/notify-summary', async (req, res) => {
+app.post('/notify-summary', cors(corsOptions), async (req: Request, res: Response) => {
   if (!req.body.user_id) {
     res.status(400).send('You must provide a User ID');
     return;
