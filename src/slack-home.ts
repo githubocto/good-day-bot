@@ -20,8 +20,6 @@ const padding = {
   },
 };
 
-// firstTime = true if very first time user opens up the app.
-// we would not have a user in the db if that's the case.
 export const getHomeBlocks = async (user: User, debug?: Debug) => {
   const repo = (user.ghuser && user.ghrepo) ? `${user.ghuser}/${user.ghrepo}` : '';
   const repoUrl = (user.ghuser && user.ghrepo) ? `https://github.com/${user.ghuser}/${user.ghrepo}` : '';
