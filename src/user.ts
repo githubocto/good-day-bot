@@ -45,7 +45,7 @@ export const saveUser = async (config: User) => {
   await pool.query(updateUserSql);
 };
 
-export const getUser = async (slackUserId: any): Promise<User> => {
+export const getUser = async (slackUserId: string): Promise<User> => {
   if (!slackUserId) {
     return null;
   }
@@ -67,4 +67,21 @@ export const getUser = async (slackUserId: any): Promise<User> => {
   user.channelid = channelid;
 
   return user;
+};
+
+export const isRepoUnique = async (slackid: string, ghuser: string, ghrepo: string) => {
+  const isUnique = `SELECT * FROM users where ghrepo='${ghrepo}' and ghuser='${ghuser}'`;
+
+  const { rows: users } = await pool.query(isUnique);
+
+  // if no other repo in the db, then unique repo
+  if (users.length === 0) {
+    return true;
+  }
+
+  // if user adds their own repo, then it's already theirs
+  if (users[0].slackid === slackid) {
+    return true;
+  }
+  return false;
 };
