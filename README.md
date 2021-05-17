@@ -46,6 +46,8 @@ GH_API_KEY=
 SLACK_SIGNING_SECRET=
 SLACK_BOT_TOKEN=
 PG_CONN_STRING=
+AZURE_FUNCTIONS_ID= # API Key ID for azure functions
+AZURE_FUNCTIONS_SECRET= # API Key secret for azure functions
 ```
 
 3. Start the server and ngrok

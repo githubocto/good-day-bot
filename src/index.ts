@@ -253,14 +253,36 @@ slackInteractions.action({}, (payload) => {
   // console.log('Form drowndown select');
 });
 
+// Express server endpoints
+
+const checkAuthenticationHeaders = (authorizationString: string) => {
+  const encoded = authorizationString.split(' ')[1];
+  const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+  const id = decoded.split(':')[0];
+  const secret = decoded.split(':')[1];
+  if (id !== process.env.AZURE_FUNCTIONS_ID || secret !== process.env.AZURE_FUNCTIONS_SECRET) {
+    return false;
+  }
+
+  return true;
+};
+
 app.get('/', async (req: Request, res: Response) => {
   res.send('beep boop beep boop');
 });
 
 app.post('/notify', async (req: Request, res: Response) => {
+  // Authentication
+  if (!req.headers.authorization) {
+    return res.status(401).send('No credentials sent!');
+  }
+  const authenticated = checkAuthenticationHeaders(req.headers.authorization);
+  if (!authenticated) {
+    return res.status(401).send('Invalid credentials');
+  }
+
   if (!req.body.user_id) {
-    res.status(400).send('You must provide a User ID');
-    return;
+    return res.status(400).send('You must provide a User ID');
   }
 
   try {
@@ -270,17 +292,26 @@ app.post('/notify', async (req: Request, res: Response) => {
       await messageUserQuestionsForm(channelId);
     }
 
-    res.status(200).send(req.body.user_id);
-    return;
+    return res.status(200).send(req.body.user_id);
   } catch (e) {
     console.error('Failed to open conversation for user', req.body.user_id);
   }
+
+  return res.status(200);
 });
 
 app.post('/notify-summary', async (req: Request, res: Response) => {
+  // Authentication
+  if (!req.headers.authorization) {
+    return res.status(401).send('No credentials sent!');
+  }
+  const authenticated = checkAuthenticationHeaders(req.headers.authorization);
+  if (!authenticated) {
+    return res.status(401).send('Invalid credentials');
+  }
+
   if (!req.body.user_id) {
-    res.status(400).send('You must provide a User ID');
-    return;
+    return res.status(400).send('You must provide a User ID');
   }
 
   try {
@@ -289,9 +320,10 @@ app.post('/notify-summary', async (req: Request, res: Response) => {
 
     await notifyUserOfSummary(user);
 
-    res.status(200).send(req.body.user_id);
-    return;
+    return res.status(200).send(req.body.user_id);
   } catch (e) {
     console.error('Failed to open conversation for user', req.body.user_id);
   }
+
+  return res.status(200);
 });
