@@ -223,8 +223,6 @@ slackInteractions.action({ actionId: 'unsubscribe' }, async (payload) => {
 });
 
 slackInteractions.action({ actionId: 'record-day' }, async (payload) => {
-  console.log('record day');
-  console.log(JSON.stringify(payload));
   const user = await getUserFromPayload(payload);
 
   const blocks = payload.message.blocks as Block[];

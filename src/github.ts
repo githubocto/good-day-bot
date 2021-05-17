@@ -41,11 +41,10 @@ export const getDataFromDataFileContents = async (content: string) => {
 };
 
 export const writeToFile = async (user: User, data: FormResponse) => {
-  const owner = user.ghuser || 'githubocto';
-  const repo = user.ghrepo || 'good-day-demo';
+  const owner = user.ghuser;
+  const repo = user.ghrepo;
 
   // get content of good-day.csv
-  // TODO: for some reason this is returning stale data
   let file;
   try {
     file = await getContent(owner, repo, FILE_PATH);
@@ -76,7 +75,7 @@ export const writeToFile = async (user: User, data: FormResponse) => {
       //   email: "your-email",
       // }
       // author: {
-      //   name: "Octokit Bot",
+      //   name: "Good Day Bot",
       //   email: "your-email",
       // },
     });
